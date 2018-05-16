@@ -36,12 +36,12 @@ public final class Constants {
     public static final long ONE_APL = 100000000;
     public static final long MAX_BALANCE_NQT = MAX_BALANCE_APL * ONE_APL;
 
-    public static final int BLOCK_TIME = 10;
+    public static final int BLOCK_TIME = 2;
     public static final long INITIAL_BASE_TARGET = BigInteger.valueOf(2).pow(63).divide(BigInteger.valueOf(BLOCK_TIME * MAX_BALANCE_APL)).longValue(); //153722867;
     public static final long MAX_BASE_TARGET = INITIAL_BASE_TARGET * (isTestnet ? MAX_BALANCE_APL : 50);
     public static final long MIN_BASE_TARGET = INITIAL_BASE_TARGET * 9 / 10;
-    public static final int MIN_BLOCKTIME_LIMIT = BLOCK_TIME - 7;
-    public static final int MAX_BLOCKTIME_LIMIT = BLOCK_TIME + 7;
+    public static final int MIN_BLOCKTIME_LIMIT = BLOCK_TIME - 1;
+    public static final int MAX_BLOCKTIME_LIMIT = BLOCK_TIME + 60;
     public static final int BASE_TARGET_GAMMA = 64;
     public static final int MAX_ROLLBACK = Math.max(Apl.getIntProperty("apl.maxRollback"), 720);
     public static final int GUARANTEED_BALANCE_CONFIRMATIONS = isTestnet ? Apl.getIntProperty("apl.testnetGuaranteedBalanceConfirmations", 120) : 120;
