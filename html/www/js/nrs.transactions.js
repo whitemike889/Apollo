@@ -34,7 +34,35 @@ var NRS = (function(NRS, $, undefined) {
         this.passPhrase = '';
         this.items = null;
         this.target = target;
+		this.itemsFiltration = $(this.target).parent().parent();
+		this.filter = null;
 
+        console.log(this.itemsFiltration);
+
+        $(this.target).parent().find('[data-transactions-pagination]').click(function(e) {
+            if ($(e.target).attr('data-navigate-page') === 'prev') {
+                that.page = that.page - 1;
+            } else {
+                that.page = that.page + 1;
+            }
+
+
+            that.getItems(that.page);
+
+        });
+
+        this.itemsFiltration.click(function(){
+			console.log(2222222);
+			console.log($(this).attr('data-transaction-type'));
+        });
+
+        this.setFiltration = function(filter) {
+            this.filter = filter;
+            this.filter = parseInt(this.filter);
+            console.log(this.filter);
+
+            this.getItems();
+		};
         this.initPaginations = function() {
             var html = '';
 
@@ -49,33 +77,15 @@ var NRS = (function(NRS, $, undefined) {
             this.passPhrase = passphrase;
             this.getItems();
         };
-
-		$(this.target).parent().find('[data-transactions-pagination]').click(function(e) {
-            if ($(e.target).attr('data-navigate-page') === 'prev') {
-                that.page = that.page - 1;
-            } else {
-                that.page = that.page + 1;
-            }
-
-
-            that.getItems(that.page);
-
-        });
         this.getItems = function(page) {
         	if (page) {
                 this.page = page;
             }
 
-
             var indicator = '';
-
             indicator += parseInt(this.page * 15 - 14) + ' &hellip; ' + parseInt(this.page * 15);
-
             console.log(indicator);
-
             $(this.target).parent().find('[data-transactions-pagination]').find('.page-nav').html(indicator);
-
-
 
             var url = API;
 
@@ -102,6 +112,10 @@ var NRS = (function(NRS, $, undefined) {
                 }
             }
 
+            if (this.filter >= 0) {
+                url += 'type=' + this.filter + '&';
+			}
+
             var nextPageUrl = url;
             var prevPageUrl = url;
 
@@ -113,6 +127,8 @@ var NRS = (function(NRS, $, undefined) {
 
             url += 'firstIndex=' + parseInt((this.page) * 14 - 14) + '&';
             url += 'lastIndex='  + (this.page) * 14 + '&';
+
+            console.log(url);
 
             var that = this;
             var $el = $("#" + NRS.currentPage + "_contents");
@@ -130,6 +146,12 @@ var NRS = (function(NRS, $, undefined) {
 
                     if (that.transactionType === 'getBlockchainTransactions' || that.transactionType === 'getPrivateBlockchainTransactions') {
                         that.items = JSON.parse(data).transactions;
+
+                        if (that.items.length < 15 && that.page == 1) {
+                            $(that.target).parent().find('[data-transactions-pagination]').find('.page-nav').addClass('disabled');
+						} else {
+                            $(that.target).parent().find('[data-transactions-pagination]').find('.page-nav').removeClass('disabled');
+                        }
 
                         for (var i = 0; i < that.items.length; i++) {
                             var transaction = that.items[i];
@@ -1007,15 +1029,20 @@ var NRS = (function(NRS, $, undefined) {
 		subtypeNavi.append(html);
 
 		var typeIndex = $('#transactions_type_navi').find('li.active a').attr('data-transaction-type');
-		if (typeIndex && typeIndex != "unconfirmed" && typeIndex != "all_unconfirmed" && typeIndex != "phasing") {
-			var typeDict = NRS.transactionTypes[typeIndex];
-			$.each(typeDict["subTypes"], function(subTypeIndex, subTypeDict) {
-				var subTitleString = $.t(subTypeDict.i18nKeyTitle);
-				html = '<li role="presentation"><a href="#" data-transaction-sub-type="' + subTypeIndex + '">';
-				html += subTypeDict.iconHTML + ' ' + subTitleString + '</a></li>';
-				$('#transactions_sub_type_navi').append(html);
-			});
-		}
+
+		console.log(typeIndex);
+
+        NRS.myTransactionPagination.setFiltration(typeIndex);
+
+		// if (typeIndex && typeIndex != "unconfirmed" && typeIndex != "all_unconfirmed" && typeIndex != "phasing") {
+		// 	var typeDict = NRS.transactionTypes[typeIndex];
+		// 	$.each(typeDict["subTypes"], function(subTypeIndex, subTypeDict) {
+		// 		var subTitleString = $.t(subTypeDict.i18nKeyTitle);
+		// 		html = '<li role="presentation"><a href="#" data-transaction-sub-type="' + subTypeIndex + '">';
+		// 		html += subTypeDict.iconHTML + ' ' + subTitleString + '</a></li>';
+		// 		$('#transactions_sub_type_navi').append(html);
+		// 	});
+		// }
 	};
 
     NRS.displayUnconfirmedTransactions = function(account) {
