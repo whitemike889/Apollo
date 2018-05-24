@@ -66,9 +66,9 @@ var NRS = (function(NRS, $, undefined) {
         this.initPaginations = function() {
             var html = '';
 
-			html += '<div data-navigate-page="prev">prev</div>';
+			html += '<div data-navigate-page="prev" class="fa fa-arrow-circle-left" style="color: #337ab7; font-size: 20px;"></div>';
 			html += '<div class="page-nav"></div>';
-			html += '<div data-navigate-page="next">next</div>';
+			html += '<div data-navigate-page="next" class="fa fa-arrow-circle-right" style="color: #337ab7; font-size: 20px;"></div>';
 
             $('[data-transactions-pagination]').html(html);
         };
