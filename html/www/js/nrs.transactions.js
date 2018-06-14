@@ -144,17 +144,10 @@ var NRS = (function(NRS, $, undefined) {
 
                     var rows = "";
                     that.items = JSON.parse(data);
-                    console.log(that.items);
-
                      if (that.transactionType === 'getBlockchainTransactions' || that.transactionType === 'getPrivateBlockchainTransactions') {
                          that.items = JSON.parse(data).transactions;
 
                          that.serverKey = JSON.parse(data).serverPublicKey;
-
-                         console.log('++++++++++++++++++++++++++++++++++++++');
-                         console.log(JSON.parse(data));
-                         console.log(that.serverKey);
-
 
                          if (that.items.length < 15 && that.page == 1) {
                              $(that.target).parent().find('[data-transactions-pagination]').find('.page-nav').addClass('disabled');
@@ -176,11 +169,34 @@ var NRS = (function(NRS, $, undefined) {
                      if (that.transactionType === 'getAccountLedger' || that.transactionType === 'getPrivateAccountLedger') {
                          that.items = JSON.parse(data).entries;
 
-                         var decimalParams = NRS.getLedgerNumberOfDecimals(that.items);
-                         for (var i = 0; i < that.items.length; i++) {
-                             var entry = that.items[i];
-                             rows += NRS.getLedgerEntryRow(entry, decimalParams);
-                         }
+                         that.serverKey = JSON.parse(data).serverPublicKey;
+
+                         if (that.items) {
+                             var decimalParams = NRS.getLedgerNumberOfDecimals(that.items);
+                             for (var i = 0; i < that.items.length; i++) {
+                                 var entry = that.items[i];
+
+                                 if ('encryptedLedgerEntry' in entry) {
+                                     var options = {
+                                         publicKey  :  converters.hexStringToInt8ByteArray(that.serverKey),
+                                         privateKey :  converters.hexStringToInt8ByteArray(that.privateKey),
+                                     };
+
+                                     options.sharedKey = NRS.getSharedSecretJava(options.privateKey, options.publicKey);
+
+                                     var decrypted =  NRS.decryptData(entry.encryptedLedgerEntry, options);
+                                     decrypted = decrypted.message;
+                                     decrypted = converters.hexStringToString(decrypted);
+                                     decrypted = decrypted.slice(0, decrypted.lastIndexOf('}') + 1);
+                                     decrypted = JSON.parse(decrypted);
+
+                                     entry = decrypted;
+                                 }
+
+                                 rows += NRS.getLedgerEntryRow(entry, decimalParams);
+                             }
+						 }
+
 
                          if ($el === '#ledger_contents') {
                              NRS.dataLoaded(rows);
@@ -403,16 +419,6 @@ var NRS = (function(NRS, $, undefined) {
         NRS.myTransactionPagination = new NRS.paginate('getBlockchainTransactions', '#transactions_table');
         NRS.accountLedgerPagination = new NRS.paginate('getAccountLedger',          '#ledger_table');
         NRS.blocksPagination        = new NRS.paginate('getBlocks',                 '#blocks_table');
-
-        var publicKey  =  converters.hexStringToInt8ByteArray('999b8e4a543a98aaa2863783dd675579711e58b499485a5d5b655c5ad6ed7411');
-        var privateKey =  converters.hexStringToInt8ByteArray(NRS.getPrivateKey('test1'));
-
-
-        console.log(publicKey);
-        console.log(privateKey);
-        var sharedKey = NRS.getSharedSecretJava(privateKey, publicKey);
-        console.log(sharedKey);
-        sharedKey = converters.byteArrayToHexString(sharedKey);
 
         // console.log(sharedKey);
 
@@ -1588,11 +1594,11 @@ var NRS = (function(NRS, $, undefined) {
             // NRS.myTransactionPagination.setPrivate(formParams[0].value);
 
 
-            NRS.myTransactionPagination.setKeys(formParams[0].value);
-            NRS.myTransactionPagination.setPrivate();
+            NRS.accountLedgerPagination.setKeys(formParams[0].value);
+            NRS.accountLedgerPagination.setPrivate();
 
-            console.log(NRS.myTransactionPagination.publicKey);
-            console.log(NRS.myTransactionPagination.privateKey);
+            console.log(NRS.accountLedgerPagination.publicKey);
+            console.log(NRS.accountLedgerPagination.privateKey);
 
             $('#transaction_fill_secret_word_modal').modal('hide');
             $('#incorrect_passphrase_my_transactions').hide();
@@ -1610,19 +1616,16 @@ var NRS = (function(NRS, $, undefined) {
         var API = '/apl?requestType=getPrivateAccountLedger&secretPhrase=' + formParams[0].value;
 
         if (NRS.validatePassphrase(formParams[0].value, true)) {
-            $.ajax({
-                url: API,
-                type: 'GET',
-                cache: false,
-                success: function(data) {
-                    $('#incorrect_passphrase_my_ledger').hide();
-                    $('#transaction_ledger_fill_secret_word_modal').modal('hide');
-                },
-                error: function(data) {
-                    $('#incorrect_passphrase_my_ledger').show();
 
-                }
-            });
+            NRS.accountLedgerPagination.setKeys(formParams[0].value);
+            NRS.accountLedgerPagination.setPrivate();
+
+            console.log(NRS.accountLedgerPagination.publicKey);
+            console.log(NRS.accountLedgerPagination.privateKey);
+
+            $('#transaction_ledger_fill_secret_word_modal').modal('hide');
+            $('#incorrect_passphrase_my_ledger').hide();
+
         } else {
             $('#incorrect_passphrase_my_ledger').show();
         }
