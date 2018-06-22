@@ -1487,9 +1487,7 @@ var NRS = (function(NRS, $, undefined) {
     $('#open_send_money_private').click(function() {
         $('#send_money_modal').modal('hide');
         $('#send_money_private_modal').modal('show');
-        $.growl($.t("success_send_money") + " <a href='#' data-account='" + NRS.getAccountFormatted(data, "recipient") + "' data-toggle='modal' data-target='#add_contact_modal' style='text-decoration:underline'>" + $.t("add_recipient_to_contacts_q") + "</a>", {
-            "type": "success"
-        });
+        
     });
 
     $('body').on('click', '#send_money_private', function() {
@@ -1513,7 +1511,9 @@ var NRS = (function(NRS, $, undefined) {
 
         if (NRS.validatePassphrase(passphrase)) {
             $('#incorrect_passphrase_message').removeClass('active');
-
+	        $.growl($.t("send_money_submitted"), {
+		        "type": "success"
+	        });
             $.ajax({
                 type: "POST",
                 url: url,
@@ -1521,6 +1521,9 @@ var NRS = (function(NRS, $, undefined) {
                 success: function(res) {
                     $('#send_money_modal').modal('hide');
                     $('#send_money_private_modal').modal('hide');
+	                $.growl($.t("send_money_submitted"), {
+		                "type": "success"
+	                });
                 }
             });
         } else {

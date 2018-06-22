@@ -712,9 +712,9 @@ var NRS = (function(NRS, $) {
 
 			if (!$modal.hasClass("modal-no-hide")) {
 				$modal.modal("hide");
-                $.growl($.t("send_money_submitted"), {
-                    "type": "success"
-                });
+                // $.growl($.t("send_money_submitted"), {
+                //     "type": "success"
+                // });
 			}
 
 			if (successMessage) {
@@ -785,9 +785,7 @@ var NRS = (function(NRS, $) {
 					if (!$modal.hasClass("modal-no-hide")) {
 
                         $modal.modal("hide");
-                        $.growl($.t("send_money_submitted"), {
-                            "type": "success"
-                        });
+                       
 					}
 					formCompleteFunction(response, data);
 				} else {
