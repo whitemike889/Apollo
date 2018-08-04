@@ -5,6 +5,7 @@ classes/*.*
 .idea/
 addons/
 apl_db/
+apl_test_db/
 classes/
 .DS_Store
 sources.tmp
