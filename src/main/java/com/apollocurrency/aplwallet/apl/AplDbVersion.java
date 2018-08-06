@@ -661,6 +661,9 @@ class AplDbVersion extends DbVersion {
             case 240:
                 apply("ALTER TABLE TAGGED_DATA ADD time_to_live BIGINT NOT NULL default " + MAX_PRUNABLE_LIFETIME);
             case 241:
+                apply("ALTER TABLE PRUNABLE_MESSAGE ADD time_to_live BIGINT NOT NULL default " + MAX_PRUNABLE_LIFETIME);
+                return;
+            case 242:
                 return;
             default:
                 throw new RuntimeException("Blockchain database inconsistent with code, at update " + nextUpdate

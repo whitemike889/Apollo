@@ -2852,6 +2852,11 @@ public interface Attachment extends Appendix {
         }
 
         @Override
+        public long getTimeToLive() {
+            return 60 * 60 * 24 * 90; // 90 days
+        }
+
+        @Override
         int getMySize() {
             return super.getMySize() + 32;
         }
@@ -3320,6 +3325,7 @@ public interface Attachment extends Appendix {
             return data;
         }
 
+        @Override
         public final long getTimeToLive() {
             if (taggedData != null) {
                 return taggedData.getTimeToLive();
@@ -3340,11 +3346,6 @@ public interface Attachment extends Appendix {
         }
 
         abstract long getTaggedDataId(Transaction transaction);
-
-        @Override
-        public boolean shouldLoadPrunable(Transaction transaction, boolean includeExpiredPrunable) {
-            return Apl.getEpochTime() - transaction.getTimestamp() < getTimeToLive();
-        }
 
     }
 

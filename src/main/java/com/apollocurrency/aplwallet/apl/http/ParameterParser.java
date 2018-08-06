@@ -613,7 +613,7 @@ public final class ParameterParser {
         if (messageValue != null) {
             try {
                 if (prunable) {
-                    return new Appendix.PrunablePlainMessage(messageValue, messageIsText);
+                    return new Appendix.PrunablePlainMessage(messageValue, messageIsText, getValidTTL(req));
                 } else {
                     return new Appendix.Message(messageValue, messageIsText);
                 }
@@ -639,7 +639,7 @@ public final class ParameterParser {
                 messageIsText = false;
             }
             if (prunable) {
-                return new Appendix.PrunablePlainMessage(message, messageIsText);
+                return new Appendix.PrunablePlainMessage(message, messageIsText, getValidTTL(req));
             } else {
                 return new Appendix.Message(message, messageIsText);
             }
@@ -702,13 +702,13 @@ public final class ParameterParser {
         }
         if (encryptedData != null) {
             if (prunable) {
-                return new Appendix.PrunableEncryptedMessage(encryptedData, isText, compress);
+                return new Appendix.PrunableEncryptedMessage(encryptedData, isText, compress, getValidTTL(req));
             } else {
                 return new Appendix.EncryptedMessage(encryptedData, isText, compress);
             }
         } else {
             if (prunable) {
-                return new Appendix.UnencryptedPrunableEncryptedMessage(plainMessageBytes, isText, compress, recipientPublicKey);
+                return new Appendix.UnencryptedPrunableEncryptedMessage(plainMessageBytes, isText, compress, recipientPublicKey, getValidTTL(req));
             } else {
                 return new Appendix.UnencryptedEncryptedMessage(plainMessageBytes, isText, compress, recipientPublicKey);
             }
@@ -725,11 +725,7 @@ public final class ParameterParser {
         String filename = Convert.nullToEmpty(req.getParameter("filename")).trim();
         String dataValue = Convert.emptyToNull(req.getParameter("data"));
 
-        long timeToLive = 0;
-        String timeToLiveStrValue = req.getParameter("timeToLive");
-        if(timeToLiveStrValue != null) {
-            timeToLive = Long.parseLong(timeToLiveStrValue);
-        }
+        long timeToLive = getValidTTL(req);
 
         byte[] data;
         if (dataValue == null) {
@@ -802,9 +798,6 @@ public final class ParameterParser {
             throw new ParameterException(INCORRECT_TAGGED_DATA_FILENAME);
         }
 
-        if(timeToLive <= 0) {
-            throw new ParameterException(INCORRECT_TAGGED_DATA_TTL);
-        }
         return new Attachment.TaggedDataUpload(name, description, tags, type, channel, isText, filename, data, timeToLive);
     }
 
@@ -912,4 +905,17 @@ public final class ParameterParser {
             return this;
         }
     }
+
+    private static Long getValidTTL(HttpServletRequest req) throws ParameterException {
+        String timeToLiveStrValue = req.getParameter("timeToLive");
+        if(timeToLiveStrValue == null) {
+            throw new ParameterException(INCORRECT_TAGGED_DATA_TTL_NULL);
+        }
+        long timeToLive = Long.parseLong(timeToLiveStrValue);
+        if(timeToLive <= 0) {
+            throw new ParameterException(INCORRECT_TAGGED_DATA_TTL);
+        }
+        return timeToLive;
+    }
+
 }
