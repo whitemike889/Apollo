@@ -1,11 +1,12 @@
 /******************************************************************************
- * Copyright © 2013-2016 The Apl Core Developers.                             *
- * Copyright © 2016-2017 Apollo Foundation IP B.V.                                     *
+ * Copyright © 2013-2016 The Nxt Core Developers                             *
+ * Copyright © 2016-2017 Jelurida IP B.V.                                     *
+ * Copyright © 2017-2018 Apollo Foundation                                    *
  *                                                                            *
  * See the LICENSE.txt file at the top-level directory of this distribution   *
  * for licensing information.                                                 *
  *                                                                            *
- * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation B.V.,*
+ * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation,*
  * no part of the Apl software, including this file, may be copied, modified, *
  * propagated, or distributed except according to the terms contained in the  *
  * LICENSE.txt file.                                                          *
@@ -19,6 +20,10 @@
  */
 var NRS = (function(NRS, $) {
 	NRS.forms = {};
+
+    NRS.FormsLoader = function() {
+        console.log('loaded forms');
+    };
 
 	$(".modal form input").keydown(function(e) {
 		if (e.which == "13") {
@@ -220,7 +225,6 @@ var NRS = (function(NRS, $) {
 
 		$modal.modal("lock");
 		$modal.find("button").prop("disabled", true);
-		$btn.button("loading");
 
         var $form;
 		if ($btn.data("form")) {
@@ -235,11 +239,13 @@ var NRS = (function(NRS, $) {
 		var requestType;
 		if ($btn.data("request")) {
 			requestType = $btn.data("request");
-		} else {
+
+        } else {
 			requestType = $form.find("input[name=request_type]").val();
-		}
-		var requestTypeKey = requestType.replace(/([A-Z])/g, function($1) {
-			return "_" + $1.toLowerCase();
+        }
+
+        var requestTypeKey = requestType.replace(/([A-Z])/g, function($1) {
+            return "_" + $1.toLowerCase();
 		});
 
 		var successMessage = getSuccessMessage(requestTypeKey);
@@ -272,17 +278,18 @@ var NRS = (function(NRS, $) {
 				return;
 			}
 		}
+        var invalidElement = false;
 
-		var invalidElement = false;
-
-		//TODO
+		//TODO multi calculating
 		$form.find(":input").each(function() {
-			if ($(this).is(":invalid")) {
+
+            if ($(this).is(":invalid")) {
 				var error = "";
-				var name = String($(this).attr("name")).replace("APL", "").replace("NQT", "").capitalize();
+				var name = String($(this).attr("name")).replace("APL", "").replace("ATM", "").capitalize();
 				var value = $(this).val();
 
-				if ($(this).hasAttr("max")) {
+
+                if ($(this).hasAttr("max")) {
 					if (!/^[\-\d\.]+$/.test(value)) {
 						error = $.t("error_not_a_number", {
 							"field": NRS.getTranslatedFieldName(name).toLowerCase()
@@ -385,6 +392,7 @@ var NRS = (function(NRS, $) {
 			data = NRS.getFormData($form);
 		}
         if ($btn.hasClass("btn-calculate-fee")) {
+
             data.calculateFee = true;
             data.feeAPL = "0";
             $form.find(".error_message").html("").hide();
@@ -545,10 +553,10 @@ var NRS = (function(NRS, $) {
 			return;
 		}
 
-		if (!NRS.showedFormWarning) {
+        if (!NRS.showedFormWarning) {
 			if ("amountAPL" in data && NRS.settings["amount_warning"] && NRS.settings["amount_warning"] != "0") {
 				try {
-					var amountNQT = NRS.convertToNQT(data.amountAPL);
+					var amountATM = NRS.convertToATM(data.amountAPL);
 				} catch (err) {
 					$form.find(".error_message").html(String(err).escapeHTML() + " (" + $.t("amount") + ")").show();
 					if (formErrorFunction) {
@@ -558,7 +566,7 @@ var NRS = (function(NRS, $) {
 					return;
 				}
 
-				if (new BigInteger(amountNQT).compareTo(new BigInteger(NRS.settings["amount_warning"])) > 0) {
+				if (new BigInteger(amountATM).compareTo(new BigInteger(NRS.settings["amount_warning"])) > 0) {
 					NRS.showedFormWarning = true;
 					$form.find(".error_message").html($.t("error_max_amount_warning", {
 						"amount": NRS.formatAmount(NRS.settings["amount_warning"]), "symbol": NRS.constants.COIN_SYMBOL
@@ -570,10 +578,10 @@ var NRS = (function(NRS, $) {
 					return;
 				}
 			}
+            if ("feeAPL" in data && NRS.settings["fee_warning"] && NRS.settings["fee_warning"] != "0") {
 
-			if ("feeAPL" in data && NRS.settings["fee_warning"] && NRS.settings["fee_warning"] != "0") {
 				try {
-					var feeNQT = NRS.convertToNQT(data.feeAPL);
+					var feeATM = NRS.convertToATM(data.feeAPL);
 				} catch (err) {
 					$form.find(".error_message").html(String(err).escapeHTML() + " (" + $.t("fee") + ")").show();
 					if (formErrorFunction) {
@@ -583,7 +591,7 @@ var NRS = (function(NRS, $) {
 					return;
 				}
 
-				if (new BigInteger(feeNQT).compareTo(new BigInteger(NRS.settings["fee_warning"])) > 0) {
+				if (new BigInteger(feeATM).compareTo(new BigInteger(NRS.settings["fee_warning"])) > 0) {
 					NRS.showedFormWarning = true;
 					$form.find(".error_message").html($.t("error_max_fee_warning", {
 						"amount": NRS.formatAmount(NRS.settings["fee_warning"]), "symbol": NRS.constants.COIN_SYMBOL
@@ -604,7 +612,7 @@ var NRS = (function(NRS, $) {
 				}
 
 				if (decimals < 2 || decimals > 6) {
-					if (requestType == "issueAsset" && data.quantityQNT == "1") {
+					if (requestType == "issueAsset" && data.quantityATU == "1") {
 						// Singleton asset no need to warn
 					} else {
 						NRS.showedFormWarning = true;
@@ -625,7 +633,7 @@ var NRS = (function(NRS, $) {
 			$.each(convertAPLFields, function(key, field) {
 				if (field in data) {
 					try {
-						NRS.convertToNQT(data[field]);
+						NRS.convertToATM(data[field]);
 					} catch (err) {
 						$form.find(".error_message").html(String(err).escapeHTML()).show();
 						if (formErrorFunction) {
@@ -639,6 +647,7 @@ var NRS = (function(NRS, $) {
 
 		if (data.doNotBroadcast || data.calculateFee) {
 			data.broadcast = "false";
+
             if (data.calculateFee) {
                 if (NRS.accountInfo.publicKey) {
                     data.publicKey = NRS.accountInfo.publicKey;
@@ -664,8 +673,8 @@ var NRS = (function(NRS, $) {
 					data.encryptedMessageNonce = converters.byteArrayToHexString(encrypted.nonce);
 					delete data.encryptionKeys;
 
-					NRS.sendRequest(requestType, data, function (response) {
-						formResponse(response, data, requestType, $modal, $form, $btn, successMessage,
+                    NRS.sendRequest(requestType, data, function (response) {
+                        formResponse(response, data, requestType, $modal, $form, $btn, successMessage,
 							originalRequestType, formErrorFunction, errorMessage);
 					})
 				});
@@ -677,10 +686,19 @@ var NRS = (function(NRS, $) {
 				NRS.unlockForm($modal, $btn);
 			}
 		} else {
-			NRS.sendRequest(requestType, data, function (response) {
-				formResponse(response, data, requestType, $modal, $form, $btn, successMessage,
-					originalRequestType, formErrorFunction, errorMessage);
-			});
+            if (requestType === 'sendMoneyPrivate') {
+            	data.deadline = '1440';
+            	NRS.sendRequest(requestType, data, function (response) {
+                    formResponse(response, data, requestType, $modal, $form, $btn, successMessage,
+                        originalRequestType, formErrorFunction, errorMessage);
+                });
+			} else {
+                NRS.sendRequest(requestType, data, function (response) {
+                    formResponse(response, data, requestType, $modal, $form, $btn, successMessage,
+                        originalRequestType, formErrorFunction, errorMessage);
+                });
+			}
+
 		}
 	};
 
@@ -688,15 +706,20 @@ var NRS = (function(NRS, $) {
 						  originalRequestType, formErrorFunction, errorMessage) {
 		//todo check again.. response.error
 		var formCompleteFunction;
-		if (response.fullHash) {
+
+
+        if (response.fullHash) {
 			NRS.unlockForm($modal, $btn);
 			if (data.calculateFee) {
-				updateFee($modal, response.transactionJSON.feeNQT);
+				updateFee($modal, response.transactionJSON.feeATM);
 				return;
 			}
 
 			if (!$modal.hasClass("modal-no-hide")) {
 				$modal.modal("hide");
+                $.growl($.t("send_money_submitted"), {
+                    "type": "success"
+                });
 			}
 
 			if (successMessage) {
@@ -739,10 +762,20 @@ var NRS = (function(NRS, $) {
 
 			NRS.unlockForm($modal, $btn);
 		} else {
-			if (data.calculateFee) {
+
+            if (data.calculateFee) {
 				NRS.unlockForm($modal, $btn, false);
-				updateFee($modal, response.transactionJSON.feeNQT);
-				return;
+
+                if (requestType === 'sendMoneyPrivate') {
+                    var fee = $('#send_money_fee_info');
+                    fee.val(NRS.convertToAPL(response.transactionJSON.feeATM));
+                    var recalcIndicator = $("#" + $modal.attr('id').replace('_modal', '') + "_recalc");
+                    recalcIndicator.hide();
+                    return;
+                } else {
+                	updateFee($modal, response.transactionJSON.feeATM);
+                    return;
+                }
 			}
 			var sentToFunction = false;
 			if (!errorMessage) {
@@ -755,7 +788,11 @@ var NRS = (function(NRS, $) {
 					NRS.unlockForm($modal, $btn);
 
 					if (!$modal.hasClass("modal-no-hide")) {
-						$modal.modal("hide");
+
+                        $modal.modal("hide");
+/*                        $.growl($.t("send_money_submitted"), {
+                            "type": "success"
+                        });*/
 					}
 					formCompleteFunction(response, data);
 				} else {
@@ -765,9 +802,9 @@ var NRS = (function(NRS, $) {
 			if (!sentToFunction) {
 				NRS.unlockForm($modal, $btn, true);
 
-				$.growl(errorMessage.escapeHTML(), {
-					type: 'danger'
-				});
+                $.growl("The private transaction has been submitted!", {
+                    "type": "success"
+                });
 			}
 		}
 	}
@@ -794,9 +831,9 @@ var NRS = (function(NRS, $) {
 		}
 	};
 
-    function updateFee(modal, feeNQT) {
+    function updateFee(modal, feeATM) {
         var fee = $("#" + modal.attr('id').replace('_modal', '') + "_fee");
-        fee.val(NRS.convertToAPL(feeNQT));
+        fee.val(NRS.convertToAPL(feeATM));
         var recalcIndicator = $("#" + modal.attr('id').replace('_modal', '') + "_recalc");
         recalcIndicator.hide();
     }

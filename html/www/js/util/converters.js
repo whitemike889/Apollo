@@ -1,11 +1,12 @@
 /******************************************************************************
- * Copyright © 2013-2016 The Apl Core Developers.                             *
- * Copyright © 2016-2017 Apollo Foundation IP B.V.                                     *
+ * Copyright © 2013-2016 The Nxt Core Developers                             *
+ * Copyright © 2016-2017 Jelurida IP B.V.                                     *
+ * Copyright © 2017-2018 Apollo Foundation                                    *
  *                                                                            *
  * See the LICENSE.txt file at the top-level directory of this distribution   *
  * for licensing information.                                                 *
  *                                                                            *
- * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation B.V.,*
+ * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation,*
  * no part of the Apl software, including this file, may be copied, modified, *
  * propagated, or distributed except according to the terms contained in the  *
  * LICENSE.txt file.                                                          *
@@ -13,6 +14,11 @@
  * Removal or modification of this copyright notice is prohibited.            *
  *                                                                            *
  ******************************************************************************/
+
+function addressLoader() {
+    console.log('address loaded');
+}
+
 
 var converters = function() {
 	var charToNibble = {};
@@ -65,14 +71,44 @@ var converters = function() {
 			for (; i < str.length - 1; i += 2)
 				bytes.push((charToNibble[str.charAt(i)] << 4) + charToNibble[str.charAt(i + 1)]);
 
-			return bytes;
+            return bytes;
 		},
+        hexStringToInt8ByteArray: function(str) {
+            var bytes = [];
+            var i = 0;
+            if (0 !== str.length % 2) {
+                bytes.push(charToNibble[str.charAt(0)]);
+                ++i;
+            }
+
+            for (; i < str.length - 1; i += 2)
+                bytes.push((charToNibble[str.charAt(i)] << 4) + charToNibble[str.charAt(i + 1)]);
+
+            var bytes = new Int8Array(bytes);
+
+            return bytes;
+        },
 		stringToHexString: function(str) {
 			return this.byteArrayToHexString(this.stringToByteArray(str));
 		},
 		hexStringToString: function(hex) {
 			return this.byteArrayToString(this.hexStringToByteArray(hex));
 		},
+        hexStringToInt8ByteArray: function(str) {
+            var bytes = [];
+            var i = 0;
+            if (0 !== str.length % 2) {
+                bytes.push(charToNibble[str.charAt(0)]);
+                ++i;
+            }
+
+            for (; i < str.length - 1; i += 2)
+                bytes.push((charToNibble[str.charAt(i)] << 4) + charToNibble[str.charAt(i + 1)]);
+
+            var bytes = new Int8Array(bytes);
+
+            return bytes;
+        },
 		checkBytesToIntInput: function(bytes, numBytes, opt_startIndex) {
 			var startIndex = opt_startIndex || 0;
 			if (startIndex < 0) {
@@ -205,6 +241,18 @@ var converters = function() {
 
 			return byteArray;
 		},
+        shortArrayToInt8ByteArray: function(shortArray) {
+            var byteArray = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+            var i;
+            for (i = 0; i < 16; i++) {
+                byteArray[2 * i] = shortArray[i] & 0xff;
+                byteArray[2 * i + 1] = shortArray[i] >> 8;
+            }
+
+            byteArray = new Int8Array(byteArray);
+
+            return byteArray;
+        },
 		shortArrayToHexString: function(ary) {
 			var res = "";
 			for (var i = 0; i < ary.length; i++) {

@@ -1,12 +1,12 @@
 <!--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  ~ Copyright © 2013-2016 The Nxt Core Developers.                            ~
+  ~ Copyright © 2013-2016 The Nxt Core Developers                           ~
   ~ Copyright © 2016-2017 Jelurida IP B.V.
-  ~ Copyright © 2018 Apollo Foundation                                    ~
+  ~ Copyright © 2017-2018 Apollo Foundation                                    ~
   ~                                                                           ~
   ~ See the LICENSE.txt file at the top-level directory of this distribution  ~
   ~ for licensing information.                                                ~
   ~                                                                           ~
-  ~ Unless otherwise agreed in a custom licensing agreement with Apollo Foundation B.V.,
+  ~ Unless otherwise agreed in a custom licensing agreement with Apollo Foundation,
   ~ no part of the Apl software, including this file, may be copied, modified,~
   ~ propagated, or distributed except according to the terms contained in the ~
   ~ LICENSE.txt file.                                                         ~
@@ -18,6 +18,9 @@
 <div id="ledger_page" class="paginated page">
     <section class="content-header">
         <h1 data-i18n="account_ledger">Account Ledger</h1>
+        <div class="align-button-page-title" style="float:right;padding-top:3px;">
+            <a href="#" id="show_ledger_private_transactions_btn" class="btn btn-default" role="button">Show private transactions</a>
+        </div>
     </section>
 
     <section class="content">
@@ -39,6 +42,14 @@
                     <tbody>
                     </tbody>
                 </table>
+                <div data-transactions-pagination ></div>
+                <div class="pagination-body" id="ledger_transactions_pgination" style="display: none;">
+                    <div class="page-back">prev</div>
+                    <ul class="current-page">
+
+                    </ul>
+                    <div class="page-forward">next</div>
+                </div>
                 <div class="data-loading-container"><img src="img/loading_indicator.gif" alt="Loading..." width="32" height="32" /></div>
                 <div class="data-empty-container" style="text-align:center;">
                     <p style="padding-top:80px;padding-bottom:100px;"><span data-i18n="no_account_ledger">No account ledger entries found</span>.</p>
@@ -52,6 +63,9 @@
 <div id="transactions_page" class="paginated page">
     <section class="content-header">
         <h1 data-i18n="my_transactions">My Transactions</h1>
+        <div class="align-button-page-title" style="float:right;padding-top:3px;">
+            <a href="#" id="show_private_transactions_btn" class="btn btn-default" role="button">Show private transactions</a>
+        </div>
     </section>
 
     <section class="content">
@@ -87,6 +101,15 @@
                     <tbody>
                     </tbody>
                 </table>
+                <div data-transactions-pagination ></div>
+                <div class="pagination-body" id="transactions_pgination" style="display: none;">
+                    <div class="page-back">prev</div>
+                    <ul class="current-page">
+                        
+                    </ul>
+                    <div class="page-forward">next</div>
+
+                </div>
                 <div class="data-loading-container"><img src="img/loading_indicator.gif" alt="Loading..." width="32" height="32" /></div>
                 <div class="data-empty-container" style="text-align:center;">
                     <p style="padding-top:80px;padding-bottom:100px;"><span data-i18n="no_transactions_found">No transactions found</span>.</p>
@@ -139,9 +162,10 @@
     </section>
 
     <section class="content">
-        <div id="scheduled_transactions_error_message" class="callout callout-danger" style="display:none"></div>
-        <div class="panel panel-default">
-            <div class="data-container data-loading panel-body">
+        <button class="btn btn-primary" id="open_scheduled_transactions">Enter Password</button>
+        
+        <div class="panel panel-default panel-box" id="scheduled_transactions_box">
+            <div class="data-container data-loading" style="margin-top: 30px">
                 <table class="table table-striped" id="scheduled_transactions_table">
                     <thead>
                     <tr>
@@ -157,7 +181,6 @@
                     <tbody>
                     </tbody>
                 </table>
-                <div class="data-loading-container"><img src="img/loading_indicator.gif" alt="Loading..." width="32" height="32" /></div>
                 <div class="data-empty-container" style="text-align:center;">
                     <p style="padding-top:80px;padding-bottom:100px;"><span data-i18n="no_transactions_found">No transactions found</span>.</p>
                 </div>

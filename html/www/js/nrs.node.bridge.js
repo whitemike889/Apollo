@@ -5,6 +5,10 @@ const options = {
     adminPassword: "" // Node admin password
 };
 
+function nrsNodeBridgeLoader() {
+    console.log('loaded nrsNodeBridgeLoader');
+}
+
 exports.init = function(params) {
     if (!params) {
         return this;
@@ -24,7 +28,6 @@ exports.load = function(callback) {
                 console.error(err);
                 return;
             }
-            console.log("Started");
 
             // Load the necessary node modules and assign them to the global scope
             // the APL client wasn't designed with modularity in mind therefore we need
@@ -81,8 +84,6 @@ exports.load = function(callback) {
             global.client.processConstants(constants);
             callback(global.client);
         } catch (e) {
-            console.log(e.message);
-            console.log(e.stack);
             throw e;
         }
     });

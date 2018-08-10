@@ -1,11 +1,12 @@
 /******************************************************************************
- * Copyright © 2013-2016 The Apl Core Developers.                             *
- * Copyright © 2016-2017 Apollo Foundation IP B.V.                                     *
+ * Copyright © 2013-2016 The Nxt Core Developers                             *
+ * Copyright © 2016-2017 Jelurida IP B.V.                                     *
+ * Copyright © 2017-2018 Apollo Foundation                                    *
  *                                                                            *
  * See the LICENSE.txt file at the top-level directory of this distribution   *
  * for licensing information.                                                 *
  *                                                                            *
- * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation B.V.,*
+ * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation,*
  * no part of the Apl software, including this file, may be copied, modified, *
  * propagated, or distributed except according to the terms contained in the  *
  * LICENSE.txt file.                                                          *
@@ -18,6 +19,10 @@
  * @depends {nrs.js}
  */
 var NRS = (function (NRS, $, undefined) {
+    var API = '/apl?';
+    NRS.aliassesLoader = function() {
+        console.log('loaded aliasses');
+    };
     NRS.pages.aliases = function () {
         var alias_count;
         NRS.sendRequest("getAliasCount+", {"account": NRS.account}, function (response) {
@@ -64,8 +69,8 @@ var NRS = (function (NRS, $, undefined) {
                     alias.aliasURI = NRS.escapeRespStr(alias.aliasURI);
 
                     var allowCancel = false;
-                    if ("priceNQT" in alias) {
-                        if (alias.priceNQT == "0") {
+                    if ("priceATM" in alias) {
+                        if (alias.priceATM == "0") {
                             if (alias.buyer == NRS.account) {
                                 alias.status = $.t("cancelling_sale");
                             } else {
@@ -186,7 +191,7 @@ var NRS = (function (NRS, $, undefined) {
             return;
         }
         data.aliasName = String(data.aliasName).escapeHTML();
-        if (data.priceNQT == "0") {
+        if (data.priceATM == "0") {
             if (data.recipient == NRS.account) {
                 $.growl(
                     $.t("cancelling_sale", {
@@ -208,7 +213,7 @@ var NRS = (function (NRS, $, undefined) {
             $.growl(
                 $.t("success_alias_sell", {
                     "alias_name": String(data.aliasName).escapeHTML(),
-                    "price": NRS.convertToAPL(data.priceNQT).escapeHTML()
+                    "price": NRS.convertToAPL(data.priceATM).escapeHTML()
                 }), {
                     "type": "success"
                 }
@@ -286,7 +291,7 @@ var NRS = (function (NRS, $, undefined) {
                     "type": "danger"
                 });
             } else {
-                if (!("priceNQT" in response)) {
+                if (!("priceATM" in response)) {
                     e.preventDefault();
                     $.growl($.t("error_alias_not_for_sale"), {
                         "type": "danger"
@@ -300,7 +305,7 @@ var NRS = (function (NRS, $, undefined) {
                     $modal.find("input[name=recipient]").val(NRS.escapeRespStr(response.accountRS));
                     $modal.find("input[name=aliasName]").val(alias.escapeHTML());
                     $modal.find(".alias_name_display").html(alias.escapeHTML());
-                    $modal.find("input[name=amountAPL]").val(NRS.convertToAPL(response.priceNQT)).prop("readonly", true);
+                    $modal.find("input[name=amountAPL]").val(NRS.convertToAPL(response.priceATM)).prop("readonly", true);
                 }
             }
         }, { isAsync: false });
@@ -318,7 +323,7 @@ var NRS = (function (NRS, $, undefined) {
         $.growl(
             $.t("success_alias_buy", {
                 "alias_name": data.aliasName,
-                "price": NRS.convertToAPL(data.amountNQT).escapeHTML()
+                "price": NRS.convertToAPL(data.amountATM).escapeHTML()
             }), {
                 "type": "success"
             }
@@ -504,14 +509,14 @@ var NRS = (function (NRS, $, undefined) {
                 var message;
 
                 if (!response.errorCode) {
-                    if ("priceNQT" in response) {
+                    if ("priceATM" in response) {
                         if (response.buyer == NRS.account) {
                             message = $.t("alias_sale_direct_offer", {
-                                "amount": NRS.formatAmount(response.priceNQT), "symbol": NRS.constants.COIN_SYMBOL
+                                "amount": NRS.formatAmount(response.priceATM), "symbol": NRS.constants.COIN_SYMBOL
                             }) + " <a href='#' data-alias='" + NRS.escapeRespStr(response.aliasName) + "' data-toggle='modal' data-target='#buy_alias_modal'>" + $.t("buy_it_q") + "</a>";
                         } else if (typeof response.buyer == "undefined") {
                             message = $.t("alias_sale_indirect_offer", {
-                                "amount": NRS.formatAmount(response.priceNQT), "symbol": NRS.constants.COIN_SYMBOL
+                                "amount": NRS.formatAmount(response.priceATM), "symbol": NRS.constants.COIN_SYMBOL
                             }) + " <a href='#' data-alias='" + NRS.escapeRespStr(response.aliasName) + "' data-toggle='modal' data-target='#buy_alias_modal'>" + $.t("buy_it_q") + "</a>";
                         } else {
                             message = $.t("error_alias_sale_different_account");
@@ -577,14 +582,14 @@ var NRS = (function (NRS, $, undefined) {
                     "data_formatted_html": String(response.aliasURI).autoLink()
                 };
 
-                if ("priceNQT" in response) {
+                if ("priceATM" in response) {
                     if (response.buyer == NRS.account) {
                         $("#alias_sale_callout").html($.t("alias_sale_direct_offer", {
-                            "amount": NRS.formatAmount(response.priceNQT), "symbol": NRS.constants.COIN_SYMBOL
+                            "amount": NRS.formatAmount(response.priceATM), "symbol": NRS.constants.COIN_SYMBOL
                         }) + " <a href='#' data-alias='" + NRS.escapeRespStr(response.aliasName) + "' data-toggle='modal' data-target='#buy_alias_modal'>" + $.t("buy_it_q") + "</a>").show();
                     } else if (typeof response.buyer == "undefined") {
                         $("#alias_sale_callout").html($.t("alias_sale_indirect_offer", {
-                            "amount": NRS.formatAmount(response.priceNQT), "symbol": NRS.constants.COIN_SYMBOL
+                            "amount": NRS.formatAmount(response.priceATM), "symbol": NRS.constants.COIN_SYMBOL
                         }) + " <a href='#' data-alias='" + NRS.escapeRespStr(response.aliasName) + "' data-toggle='modal' data-target='#buy_alias_modal'>" + $.t("buy_it_q") + "</a>").show();
                     } else {
                         $("#alias_sale_callout").html($.t("error_alias_sale_different_account")).show();
@@ -598,6 +603,49 @@ var NRS = (function (NRS, $, undefined) {
                 $("#alias_info_modal").modal("show");
             }
         });
+    });
+
+    $('#hide_advanced').change(function() {
+        $('.optional_message').toggleClass('disabled');
+        $('.advanced_info').toggleClass('disabled');
+        $('#send_money_private').toggleClass('disabled');
+        $('#send_money_public').toggleClass('disabled');
+    });
+
+    $('body').on('click', '#send_money_private', function($modal) {
+        var recipient  = $('#send_money_recipient').val();
+        var amount     = $('#send_money_amount').val();
+        var fee        = $('#send_money_fee').val();
+        var passphrase = $('#send_money_password').val();
+      
+        var url = API;
+        url += 'requestType=sendMoneyPrivate';
+
+        var url = API;
+        url += 'requestType=sendMoneyPrivate';
+        var data = {
+            deadline:     1440,
+            feeATM:       fee + '00000000',
+            amountATM:    amount + '00000000',
+            recipient :   recipient,
+            secretPhrase: passphrase
+        };
+
+        if (NRS.validatePassphrase(passphrase)) {
+            $('#incorrect_passphrase_message').removeClass('active');
+
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: data,
+                success: function(res) {
+                    $('#send_money_modal').modal('hide');
+                }
+            });
+        } else {
+            $('#incorrect_passphrase_message').addClass('active');
+        }
+
     });
 
     return NRS;

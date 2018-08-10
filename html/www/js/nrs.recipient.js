@@ -1,11 +1,12 @@
 /******************************************************************************
- * Copyright © 2013-2016 The Apl Core Developers.                             *
- * Copyright © 2016-2017 Apollo Foundation IP B.V.                                     *
+ * Copyright © 2013-2016 The Nxt Core Developers                             *
+ * Copyright © 2016-2017 Jelurida IP B.V.                                     *
+ * Copyright © 2017-2018 Apollo Foundation                                    *
  *                                                                            *
  * See the LICENSE.txt file at the top-level directory of this distribution   *
  * for licensing information.                                                 *
  *                                                                            *
- * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation B.V.,*
+ * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation,*
  * no part of the Apl software, including this file, may be copied, modified, *
  * propagated, or distributed except according to the terms contained in the  *
  * LICENSE.txt file.                                                          *
@@ -18,11 +19,15 @@
  * @depends {nrs.js}
  */
 var NRS = (function(NRS, $) {
+    NRS.recipmentLoader = function() {
+        console.log('loaded recipment');
+    };
+
 	NRS.automaticallyCheckRecipient = function() {
         var $recipientFields = $("#send_money_recipient, #transfer_asset_recipient, #transfer_currency_recipient, " +
         "#send_message_recipient, #add_contact_account_id, #update_contact_account_id, #lease_balance_recipient, " +
         "#transfer_alias_recipient, #sell_alias_recipient, #set_account_property_recipient, #delete_account_property_recipient, " +
-		"#add_monitored_account_recipient");
+		"#add_monitored_account_recipient, #send_money_recipient_info");
 
 		$recipientFields.on("blur", function() {
 			$(this).trigger("checkRecipient");
@@ -107,7 +112,8 @@ var NRS = (function(NRS, $) {
 	});
 
 	NRS.forms.sendMoneyComplete = function(response, data) {
-		if (!(data["_extra"] && data["_extra"].convertedAccount) && !(data.recipient in NRS.contacts)) {
+
+        if (!(data["_extra"] && data["_extra"].convertedAccount) && !(data.recipient in NRS.contacts)) {
 			$.growl($.t("success_send_money") + " <a href='#' data-account='" + NRS.getAccountFormatted(data, "recipient") + "' data-toggle='modal' data-target='#add_contact_modal' style='text-decoration:underline'>" + $.t("add_recipient_to_contacts_q") + "</a>", {
 				"type": "success"
 			});
@@ -140,7 +146,7 @@ var NRS = (function(NRS, $) {
 						"type": "info",
 						"message": $.t("recipient_info_with_name", {
 							"name" : NRS.unescapeRespStr(response.name),
-							"amount": NRS.formatAmount(response.unconfirmedBalanceNQT, false, true),
+							"amount": NRS.formatAmount(response.unconfirmedBalanceATM, false, true),
                             "symbol": NRS.constants.COIN_SYMBOL
 						}),
 						"account": response
@@ -150,7 +156,7 @@ var NRS = (function(NRS, $) {
 					result = {
 						"type": "info",
 						"message": $.t("recipient_info", {
-							"amount": NRS.formatAmount(response.unconfirmedBalanceNQT, false, true),
+							"amount": NRS.formatAmount(response.unconfirmedBalanceATM, false, true),
                             "symbol": NRS.constants.COIN_SYMBOL
 						}),
 						"account": response
@@ -182,7 +188,7 @@ var NRS = (function(NRS, $) {
 					result = {
 						"type": "warning",
 						"message": $.t("recipient_no_public_key_pka", {
-							"amount": NRS.formatAmount(response.unconfirmedBalanceNQT, false, true),
+							"amount": NRS.formatAmount(response.unconfirmedBalanceATM, false, true),
                             "symbol": NRS.constants.COIN_SYMBOL
 						}),
 						"account": response,

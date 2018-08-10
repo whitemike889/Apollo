@@ -1,11 +1,12 @@
 /******************************************************************************
- * Copyright © 2013-2016 The Apl Core Developers.                             *
- * Copyright © 2016-2017 Apollo Foundation IP B.V.                                     *
+ * Copyright © 2013-2016 The Nxt Core Developers                             *
+ * Copyright © 2016-2017 Jelurida IP B.V.                                     *
+ * Copyright © 2017-2018 Apollo Foundation                                    *
  *                                                                            *
  * See the LICENSE.txt file at the top-level directory of this distribution   *
  * for licensing information.                                                 *
  *                                                                            *
- * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation B.V.,*
+ * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation,*
  * no part of the Apl software, including this file, may be copied, modified, *
  * propagated, or distributed except according to the terms contained in the  *
  * LICENSE.txt file.                                                          *
@@ -26,7 +27,9 @@ var NRS = (function(NRS, $) {
         _latestMessages = {};
 	};
 	NRS.resetMessagesState();
-
+    NRS.messageLoader = function() {
+        console.log('loaded message loader');
+    };
 	NRS.pages.messages = function(callback) {
 		_messages = {};
         $("#inline_message_form").hide();
@@ -371,8 +374,12 @@ var NRS = (function(NRS, $) {
 		if (option == "add_contact") {
 			$("#add_contact_account_id").val(account).trigger("blur");
 			$("#add_contact_modal").modal("show");
+            $('#send_money_public').addClass('disabled');
+            $('#send_money_private').removeClass('disabled');
 		} else if (option == "send_apl") {
 			$("#send_money_recipient").val(account).trigger("blur");
+			$('#send_money_public').addClass('disabled');
+			$('#send_money_private').removeClass('disabled');
 			$("#send_money_modal").modal("show");
 		} else if (option == "account_info") {
 			NRS.showAccountModal(account);
@@ -386,9 +393,13 @@ var NRS = (function(NRS, $) {
 		NRS.closeContextMenu();
 		if (option == "update_contact") {
 			$("#update_contact_modal").modal("show");
+            $('#send_money_public').addClass('disabled');
+            $('#send_money_private').removeClass('disabled');
 		} else if (option == "send_apl") {
 			$("#send_money_recipient").val(NRS.selectedContext.data("contact")).trigger("blur");
 			$("#send_money_modal").modal("show");
+            $('#send_money_public').addClass('disabled');
+            $('#send_money_private').removeClass('disabled');
 		}
 	});
 

@@ -1,11 +1,12 @@
 /******************************************************************************
- * Copyright © 2013-2016 The Apl Core Developers.                             *
- * Copyright © 2016-2017 Apollo Foundation IP B.V.                                     *
+ * Copyright © 2013-2016 The Nxt Core Developers                             *
+ * Copyright © 2016-2017 Jelurida IP B.V.                                     *
+ * Copyright © 2017-2018 Apollo Foundation                                    *
  *                                                                            *
  * See the LICENSE.txt file at the top-level directory of this distribution   *
  * for licensing information.                                                 *
  *                                                                            *
- * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation B.V.,*
+ * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation,*
  * no part of the Apl software, including this file, may be copied, modified, *
  * propagated, or distributed except according to the terms contained in the  *
  * LICENSE.txt file.                                                          *
@@ -19,8 +20,15 @@
  * @depends {nrs.modals.js}
  */
 var NRS = (function(NRS, $) {
-	$("body").on("click", ".show_ledger_modal_action", function(event) {
+    var API = '/apl?';
+
+    $("body").on("click", ".show_ledger_modal_action", function(event) {
 		event.preventDefault();
+
+        $('#get_date_private_transaction').attr('data-ledger', $(this).attr('data-entry'));
+        NRS.modalsLedgerLoader = function() {
+            console.log('loaded modals ledger');
+        };
 		if (NRS.fetchingModalData) {
 			return;
 		}
@@ -45,14 +53,57 @@ var NRS = (function(NRS, $) {
 		});
 	});
 
+
+	$('#get_date_private_transaction').submit(function() {
+        var formParams = $( this ).serializeArray();
+
+        var passphrase = formParams[0].value;
+
+        if (NRS.validatePassphrase(passphrase)) {
+            $('#incorrect_passphrase_message').removeClass('active');
+
+            var url = API;
+
+            url += 'requestType=getPrivateAccountLedgerEntry&';
+            url += 'ledgerId=' +  $( this ).attr('data-ledger') + '&';
+            url += 'secretPhrase=' + passphrase;
+
+            $.get( url, function() {
+            })
+                .then(function (res) {
+                    $('#get_private_transaction_type').modal('hide');
+                    res = JSON.parse(res);
+
+
+                    var detailsTable = $("#ledger_info_details_table");
+                    detailsTable.find("tbody").empty().append(NRS.createInfoTable(res));
+                    detailsTable.show();
+                    $("#ledger_info_modal").modal("show");
+                });
+
+        } else {
+            $('#incorrect_passphrase_message').addClass('active');
+        }
+
+
+    });
+
+
 	NRS.showLedgerEntryModal = function(entry, change, balance) {
         try {
             NRS.setBackLink();
     		NRS.modalStack.push({ class: "show_ledger_modal_action", key: "entry", value: { entry: entry.ledgerId, change: change, balance: balance }});
             $("#ledger_info_modal_entry").html(entry.ledgerId);
             var entryDetails = $.extend({}, entry);
-            entryDetails.eventType = $.t(entryDetails.eventType.toLowerCase());
-            entryDetails.holdingType = $.t(entryDetails.holdingType.toLowerCase());
+            try {
+                entryDetails.eventType = $.t(entryDetails.eventType.toLowerCase());
+                entryDetails.holdingType = $.t(entryDetails.holdingType.toLowerCase());
+
+            } catch (e) {
+                $('#get_date_modal').modal('show');
+
+                return;
+            }
             if (entryDetails.timestamp) {
                 entryDetails.entryTime = NRS.formatTimestamp(entryDetails.timestamp);
             }

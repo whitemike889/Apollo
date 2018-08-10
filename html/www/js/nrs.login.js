@@ -1,11 +1,12 @@
 /******************************************************************************
- * Copyright © 2013-2016 The Apl Core Developers.                             *
- * Copyright © 2016-2017 Apollo Foundation IP B.V.                                     *
+ * Copyright © 2013-2016 The Nxt Core Developers                             *
+ * Copyright © 2016-2017 Jelurida IP B.V.                                     *
+ * Copyright © 2017-2018 Apollo Foundation                                    *
  *                                                                            *
  * See the LICENSE.txt file at the top-level directory of this distribution   *
  * for licensing information.                                                 *
  *                                                                            *
- * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation B.V.,*
+ * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation,*
  * no part of the Apl software, including this file, may be copied, modified, *
  * propagated, or distributed except according to the terms contained in the  *
  * LICENSE.txt file.                                                          *
@@ -18,6 +19,23 @@
  * @depends {nrs.js}
  */
 var NRS = (function(NRS, $, undefined) {
+	
+	NRS.saveAccountLocal = function() {
+		localStorage.setItem('aplUser', 'red');
+	};
+    NRS.loginLoader = function() {
+        console.log('loaded login loader');
+    };
+	NRS.getAccountLocal = function() {
+		return localStorage.getItem('aplUser');
+	};
+	
+	NRS.removeAccountLocal = function() {
+		localStorage.removeItem('aplUser');
+	};
+	
+	
+	
 	NRS.newlyCreatedAccount = false;
 
 	NRS.allowLoginViaEnter = function() {
@@ -208,7 +226,11 @@ var NRS = (function(NRS, $, undefined) {
 		NRS.accountRS = "";
 		NRS.publicKey = "";
 		NRS.accountInfo = {};
-
+		NRS.myTransactionPagination = "";
+		NRS.accountLedgerPagination = "";
+		NRS.blocksPagination = "";
+		NRS.lastTransactions = "";
+		
 		// Reset other functional state
 		$("#account_balance, #account_balance_sidebar, #account_nr_assets, #account_assets_balance, #account_currencies_balance, #account_nr_currencies, #account_purchase_count, #account_pending_sale_count, #account_completed_sale_count, #account_message_count, #account_alias_count").html("0");
 		$("#id_search").find("input[name=q]").val("");
@@ -218,18 +240,18 @@ var NRS = (function(NRS, $, undefined) {
 		NRS.forgingStatus = NRS.constants.UNKNOWN;
 		NRS.isAccountForging = false;
 		NRS.selectedContext = null;
-
+		
 		// Reset plugins state
 		NRS.activePlugins = false;
 		NRS.numRunningPlugins = 0;
 		$.each(NRS.plugins, function(pluginId) {
 			NRS.determinePluginLaunchStatus(pluginId);
 		});
-
+		
 		// Return to the dashboard and notify the user
 		NRS.goToPage("dashboard");
         NRS.login(false, account, function() {
-            $.growl($.t("switched_to_account", { account: account }))
+            $.growl($.t("switched_to_account", { account: account }));
         }, true);
 	};
 
@@ -291,7 +313,7 @@ var NRS = (function(NRS, $, undefined) {
 		console.log("login isPassphraseLogin = " + isPassphraseLogin +
 			", isAccountSwitch = " + isAccountSwitch +
 			", isSavedPassphrase = " + isSavedPassphrase);
-        NRS.spinner.spin($("#center")[0]);
+	    NRS.spinner.spin($("#center")[0]);
         if (isPassphraseLogin && !isSavedPassphrase){
 			var loginCheckPasswordLength = $("#login_check_password_length");
 			if (!id.length) {
@@ -313,8 +335,10 @@ var NRS = (function(NRS, $, undefined) {
 			$("#login_password, #registration_password, #registration_password_repeat").val("");
 			loginCheckPasswordLength.val(1);
 		}
-
+	 
+		
 		console.log("login calling getBlockchainStatus");
+  
 		NRS.sendRequest("getBlockchainStatus", {}, function(response) {
 			if (response.errorCode) {
 			    NRS.connectionError(response.errorDescription);
@@ -335,10 +359,12 @@ var NRS = (function(NRS, $, undefined) {
 			}
 			console.log("calling " + accountRequest);
 			NRS.sendRequest(accountRequest, requestVariable, function(response, data) {
-				console.log(accountRequest + " response received");
 				if (!response.errorCode) {
 					NRS.account = NRS.escapeRespStr(response.account);
 					NRS.accountRS = NRS.escapeRespStr(response.accountRS);
+					
+					NRS.setJSONItem('aplUser', NRS.accountRS);
+					
 					if (isPassphraseLogin) {
                         NRS.publicKey = NRS.getPublicKey(converters.stringToHexString(id));
                     } else {
@@ -348,6 +374,8 @@ var NRS = (function(NRS, $, undefined) {
 				if (!isPassphraseLogin && response.errorCode == 5) {
 					NRS.account = NRS.escapeRespStr(response.account);
 					NRS.accountRS = NRS.escapeRespStr(response.accountRS);
+					
+					
 				}
 				if (!NRS.account) {
 					$.growl($.t("error_find_account_id", { accountRS: (data && data.account ? String(data.account).escapeHTML() : "") }), {
@@ -364,7 +392,8 @@ var NRS = (function(NRS, $, undefined) {
                     NRS.spinner.stop();
 					return;
 				}
-
+				
+				
 				NRS.sendRequest("getAccountPublicKey", {
 					"account": NRS.account
 				}, function(response) {
@@ -470,9 +499,16 @@ var NRS = (function(NRS, $, undefined) {
 						callback();
 					}
 
-					$.each(NRS.pages, function(key) {
-						if(key in NRS.setup) {
-							NRS.setup[key]();
+                    $.each(NRS.pages, function(key) {
+                        if(key in NRS.setup) {
+                            try {
+                                NRS.setup[key]();
+
+                            } catch(err) {
+                                setTimeout(function() {
+                                    NRS.setup[key]();
+                                }, 1500)
+                            }
 						}
 					});
 
@@ -510,8 +546,37 @@ var NRS = (function(NRS, $, undefined) {
 
 					NRS.updateApprovalRequests();
 				});
+				
+				if (NRS.myTransactionPagination && NRS.accountLedgerPagination && NRS.blocksPagination) {
+					NRS.myTransactionPagination.unsetPrivate();
+					NRS.accountLedgerPagination.unsetPrivate();
+					NRS.blocksPagination       .unsetPrivate();
+					
+					NRS.myTransactionPagination.getItems(1, NRS.account);
+					NRS.accountLedgerPagination.getItems(1, NRS.account);
+					NRS.blocksPagination       .getItems(1, NRS.account);
+					
+					NRS.myTransactionPagination.getItems(0, NRS.account);
+					NRS.accountLedgerPagination.getItems(0, NRS.account);
+					NRS.blocksPagination       .getItems(0, NRS.account);
+					
+				}
 			});
 		});
+	
+	    if (NRS.myTransactionPagination && NRS.accountLedgerPagination && NRS.blocksPagination) {
+		    NRS.myTransactionPagination.unsetPrivate();
+		    NRS.accountLedgerPagination.unsetPrivate();
+		    NRS.blocksPagination       .unsetPrivate();
+		
+		    NRS.myTransactionPagination.getItems(1, NRS.account);
+		    NRS.accountLedgerPagination.getItems(1, NRS.account);
+		    NRS.blocksPagination       .getItems(1, NRS.account);
+		
+		    NRS.myTransactionPagination.getItems(0, NRS.account);
+		    NRS.accountLedgerPagination.getItems(0, NRS.account);
+		    NRS.blocksPagination       .getItems(0, NRS.account);
+	    }
 	};
 
 	$("#logout_button_container").on("show.bs.dropdown", function() {
@@ -521,6 +586,7 @@ var NRS = (function(NRS, $, undefined) {
 	});
 
 	NRS.initPluginWarning = function() {
+		
 		if (NRS.activePlugins) {
 			var html = "";
 			html += "<div style='font-size:13px;'>";
@@ -594,7 +660,23 @@ var NRS = (function(NRS, $, undefined) {
     };
 
 	NRS.logout = function(stopForging) {
-		if (stopForging && NRS.forgingStatus == NRS.constants.FORGING) {
+
+		NRS.myTransactionPagination.unsetPrivate();
+		NRS.accountLedgerPagination.unsetPrivate();
+		NRS.blocksPagination       .unsetPrivate();
+		
+		NRS.myTransactionPagination.getItems();
+		NRS.accountLedgerPagination.getItems();
+		NRS.blocksPagination       .getItems();
+
+    delete NRS.myTransactionPagination;
+    delete NRS.accountLedgerPagination;
+    delete NRS.blocksPagination;
+	
+		NRS.removeAccountLocal();
+	
+
+        if (stopForging && NRS.forgingStatus == NRS.constants.FORGING) {
 			var stopForgingModal = $("#stop_forging_modal");
             stopForgingModal.find(".show_logout").show();
 			stopForgingModal.modal("show");

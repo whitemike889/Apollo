@@ -1,11 +1,12 @@
 /******************************************************************************
- * Copyright © 2013-2016 The Apl Core Developers.                             *
- * Copyright © 2016-2017 Apollo Foundation IP B.V.                                     *
+ * Copyright © 2013-2016 The Nxt Core Developers                             *
+ * Copyright © 2016-2017 Jelurida IP B.V.                                     *
+ * Copyright © 2017-2018 Apollo Foundation                                    *
  *                                                                            *
  * See the LICENSE.txt file at the top-level directory of this distribution   *
  * for licensing information.                                                 *
  *                                                                            *
- * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation B.V.,*
+ * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation,*
  * no part of the Apl software, including this file, may be copied, modified, *
  * propagated, or distributed except according to the terms contained in the  *
  * LICENSE.txt file.                                                          *
@@ -20,6 +21,9 @@
 var NRS = (function(NRS, $, undefined) {
 	NRS.fetchingModalData = false;
 	NRS.modalStack = [];
+    NRS.modalsLoader = function() {
+        console.log('loaded modals');
+    };
 	var isFakeWarningDisplayed;
 
 	// save the original function object
@@ -64,7 +68,7 @@ var NRS = (function(NRS, $, undefined) {
 	$(".add_message").on("change", function() {
 		if ($(this).is(":checked")) {
 			$(this).closest("form").find(".optional_message").fadeIn();
-			$(this).closest(".form-group").css("margin-bottom", "5px");
+			$(this).closest(".form-group").css("margin-bottom", "25px");
 		} else {
 			$(this).closest("form").find(".optional_message").hide();
 			$(this).closest(".form-group").css("margin-bottom", "");
