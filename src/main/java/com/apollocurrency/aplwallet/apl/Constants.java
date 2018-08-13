@@ -41,11 +41,11 @@ public final class Constants {
     public static final long MAX_BASE_TARGET = INITIAL_BASE_TARGET * (isTestnet ? MAX_BALANCE_APL : 50);
     public static final long MIN_BASE_TARGET = INITIAL_BASE_TARGET * 9 / 10;
     public static final int MIN_BLOCKTIME_LIMIT = BLOCK_TIME - 1;
-    public static final int MAX_BLOCKTIME_LIMIT = BLOCK_TIME + 7;
+    public static final int MAX_BLOCKTIME_LIMIT = BLOCK_TIME + 60;
     public static final int BASE_TARGET_GAMMA = 64;
-    public static final int MAX_ROLLBACK = Math.max(Apl.getIntProperty("apl.maxRollback"), 1440);
+    public static final int MAX_ROLLBACK = Math.max(Apl.getIntProperty("apl.maxRollback"), 720);
     public static final int GUARANTEED_BALANCE_CONFIRMATIONS = isTestnet ? Apl.getIntProperty("apl.testnetGuaranteedBalanceConfirmations", 120) : 120;
-    public static final int LEASING_DELAY = isTestnet ? Apl.getIntProperty("apl.testnetLeasingDelay", 1440) : 1440;
+    public static final int LEASING_DELAY = isTestnet ? Apl.getIntProperty("apl.testnetLeasingDelay", 120) : 120;
     public static final long MIN_FORGING_BALANCE_ATM = 1000 * ONE_APL;
 
     public static final int MAX_TIMEDRIFT = 15; // allow up to 15 s clock difference
