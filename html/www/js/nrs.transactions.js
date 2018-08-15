@@ -377,6 +377,8 @@ var NRS = (function(NRS, $, undefined) {
 			var that = this;
 
 			setInterval(function(){
+                var accountURL = API + 'requestType=getAccount&account=' + NRS.account;
+                
                 $.ajax({
                     url: API + 'requestType=getBlock',
                     type: 'GET',
@@ -405,8 +407,29 @@ var NRS = (function(NRS, $, undefined) {
                     },
                     error: function(data) {
                         console.log('err: ', data);
+                
                     }
                 });
+                
+                
+                $.ajax({
+            	    url: accountURL,
+            	    cache: false,
+        	    type: 'GET',
+        	    success: function(data){
+        		data = JSON.parse(data);
+        		
+			var accountBalance = data.unconfirmedBalanceATM;
+			var balanceIntegers = Math.floor(accountBalance/100000000).toLocaleString();
+			var balanceDecimals = Math.round((accountBalance/100000000 - Math.floor(accountBalance/100000000))*100);
+			$('#account_balance').empty().html( balanceIntegers + '<span style="font-size:12px">.' + balanceDecimals +  '</span>');
+        	    },
+        	    error: function(data){
+                        console.log('err: ', data);
+                    }
+        	    
+        	});
+                
                 that.getPreviewTransactions();
 			},2000);
 		};
