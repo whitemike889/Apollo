@@ -126,7 +126,7 @@ var NRS = (function(NRS, $, undefined) {
                             rows += NRS.getTransactionRowHTML(transaction, false, {amount: 0, fee: 0});
                         }
                         var $el = $("#dashboard_contents");
-
+/*
                         if ($el.length) {
                             $el.empty().append(rows);
                         } else {
@@ -134,6 +134,11 @@ var NRS = (function(NRS, $, undefined) {
                             $el.find("tbody").empty().append(rows);
                             $el.find('[data-toggle="tooltip"]').tooltip();
                         }
+*/
+			    $el = $("#dashboard_table");
+                            $el.find("tbody").empty().append(rows);
+                            $el.find('[data-toggle="tooltip"]').tooltip();
+                        
                     },
                     error: function(data) {
                         console.log('err: ', data);
@@ -385,15 +390,15 @@ var NRS = (function(NRS, $, undefined) {
                     	if (that.blockHeight && that.blockHeight !== data.height) {
 							that.blockHeight = data.height;
 
-                            $('[data-block]').empty().html(that.blockHeight);
-                            $('[data-block]').attr('data-block', that.blockHeight);
+                    	$('#sidebar_block_link').find('[data-block]').empty().html(that.blockHeight);
+                    	$('#sidebar_block_link').find('[data-block]').attr('data-block', that.blockHeight);
 
 							that.getItems();
 						}
 						if (!that.blockHeight) {
 							that.blockHeight = data.height;
-                            $('[data-block]').empty().html(that.blockHeight);
-                            $('[data-block]').attr('data-block', that.blockHeight);
+                            $('#sidebar_block_link').find('[data-block]').empty().html(that.blockHeight);
+                            $('#sidebar_block_link').find('[data-block]').attr('data-block', that.blockHeight);
 
                             that.getItems();
 						}
