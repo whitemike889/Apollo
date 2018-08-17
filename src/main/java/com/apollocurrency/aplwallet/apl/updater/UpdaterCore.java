@@ -1,16 +1,5 @@
 /*
- * Copyright © 2017-2018 Apollo Foundation
- *
- * See the LICENSE.txt file at the top-level directory of this distribution
- * for licensing information.
- *
- * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation,
- * no part of the Apl software, including this file, may be copied, modified,
- * propagated, or distributed except according to the terms contained in the
- * LICENSE.txt file.
- *
- * Removal or modification of this copyright notice is prohibited.
- *
+ * Copyright © 2018 Apollo Foundation
  */
 
 package com.apollocurrency.aplwallet.apl.updater;
@@ -48,6 +37,7 @@ public class UpdaterCore {
             Logger.logDebugMessage("Updater db error: ", e.getLocalizedMessage());
         }
         if (transaction != null && !isUpdated) {
+            Logger.logDebugMessage("Found non-installed update : " + transaction.getJSONObject().toJSONString());
             UpdateDataHolder updateHolder = processTransaction(transaction);
             if (updateHolder == null) {
                 Logger.logErrorMessage("Unable to validate update transaction: " + transaction.getJSONObject().toJSONString());
@@ -107,7 +97,6 @@ public class UpdaterCore {
         int updateHeight = getUpdateHeightFromType(type);
         UpdaterMediator.getInstance().setUpdateData(true, updateHeight, updateTransaction.getHeight(), type.getLevel(), attachment.getAppVersion());
         UpdaterMediator.getInstance().setUpdateState(UpdateInfo.UpdateState.IN_PROGRESS);
-        boolean restoreRequired = false;
         if (type == TransactionType.Update.CRITICAL) {
             //stop forging and peer server immediately
             Logger.logWarningMessage("Starting critical update now!");
@@ -213,6 +202,7 @@ public class UpdaterCore {
                 if (((TransactionType.Update) holder.getTransaction().getType()).getLevel() != Level.MINOR) {
                     UpdaterMediator.getInstance().removeListener(updateListener, TransactionProcessor.Event.ADDED_CONFIRMED_TRANSACTIONS);
                 }
+                Logger.logDebugMessage("Found appropriate update transaction: " + holder.getTransaction().getPrunableAttachmentJSON());
                 this.updateDataHolder = holder;
                 startUpdate();
             }
@@ -221,6 +211,7 @@ public class UpdaterCore {
 
     private UpdateDataHolder processTransaction(Transaction tr) {
         if (UpdaterMediator.getInstance().isUpdateTransaction(tr)) {
+            Logger.logDebugMessage("Processing update transaction " + tr.getId());
             Attachment.UpdateAttachment attachment = (Attachment.UpdateAttachment) tr.getAttachment();
             if (attachment.getAppVersion().greaterThan(UpdaterMediator.getInstance().getWalletVersion())) {
                 Platform currentPlatform = Platform.current();
@@ -254,7 +245,7 @@ public class UpdaterCore {
                     return true;
                 }
                 catch (SecurityException e) {
-                    Logger.logWarningMessage("Certificate is not appropriate." + certificate.toString());
+                    Logger.logWarningMessage("Certificate is not appropriate." + UpdaterUtil.getStringRepresentation(certificate));
                 }
             }
         }
