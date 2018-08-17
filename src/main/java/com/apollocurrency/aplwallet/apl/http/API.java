@@ -23,7 +23,10 @@ package com.apollocurrency.aplwallet.apl.http;
 import com.apollocurrency.aplwallet.apl.Apl;
 import com.apollocurrency.aplwallet.apl.Constants;
 import com.apollocurrency.aplwallet.apl.crypto.Crypto;
-import com.apollocurrency.aplwallet.apl.util.*;
+import com.apollocurrency.aplwallet.apl.util.Convert;
+import com.apollocurrency.aplwallet.apl.util.Logger;
+import com.apollocurrency.aplwallet.apl.util.ThreadPool;
+import com.apollocurrency.aplwallet.apl.util.UPnP;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.security.SecurityHandler;
@@ -42,7 +45,6 @@ import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import javax.servlet.*;
-import javax.servlet.Filter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -144,12 +146,8 @@ public final class API {
             final int sslPort = Constants.isTestnet ? TESTNET_API_SSLPORT : Apl.getIntProperty("apl.apiServerSSLPort");
             final String host = Apl.getStringProperty("apl.apiServerHost");
             disableAdminPassword = Apl.getBooleanProperty("apl.disableAdminPassword") || ("127.0.0.1".equals(host) && adminPassword.isEmpty());
-            int maxThreadPoolSize = Apl.getIntProperty("apl.threadPoolMaxSize");
-            int minThreadPoolSize = Apl.getIntProperty("apl.threadPoolMinSize");
-            org.eclipse.jetty.util.thread.QueuedThreadPool threadPool = new org.eclipse.jetty.util.thread.QueuedThreadPool();
-            threadPool.setMaxThreads(Math.max(maxThreadPoolSize, 200));
-            threadPool.setMinThreads(Math.max(minThreadPoolSize, 8));
-            apiServer = new Server(threadPool);
+
+            apiServer = new Server();
             ServerConnector connector;
             boolean enableSSL = Apl.getBooleanProperty("apl.apiSSL");
             //
