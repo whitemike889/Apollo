@@ -1,13 +1,12 @@
 /*
  * Copyright © 2013-2016 The Nxt Core Developers.
  * Copyright © 2016-2017 Jelurida IP B.V.
- * Copyright © 2017-2018 Apollo Foundation
  *
  * See the LICENSE.txt file at the top-level directory of this distribution
  * for licensing information.
  *
- * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation,
- * no part of the Apl software, including this file, may be copied, modified,
+ * Unless otherwise agreed in a custom licensing agreement with Jelurida B.V.,
+ * no part of the Nxt software, including this file, may be copied, modified,
  * propagated, or distributed except according to the terms contained in the
  * LICENSE.txt file.
  *
@@ -15,10 +14,15 @@
  *
  */
 
+/*
+ * Copyright © 2018 Apollo Foundation
+ */
+
 package com.apollocurrency.aplwallet.apl.db;
 
 import com.apollocurrency.aplwallet.apl.Apl;
 import com.apollocurrency.aplwallet.apl.util.Logger;
+import net.sf.log4jdbc.ConnectionSpy;
 
 import java.sql.*;
 import java.util.HashMap;
@@ -32,10 +36,12 @@ public class TransactionalDb extends BasicDb {
     private static final long stmtThreshold;
     private static final long txThreshold;
     private static final long txInterval;
+    private static final boolean enableSqlLogs;
     static {
         stmtThreshold = getPropertyOrDefault("apl.statementLogThreshold", 1000);
         txThreshold = getPropertyOrDefault("apl.transactionLogThreshold", 5000);
         txInterval = getPropertyOrDefault("apl.transactionLogInterval", 15) * 60 * 1000;
+        enableSqlLogs = Apl.getBooleanProperty("apl.enableSqlLogs");
     }
 
     private final ThreadLocal<DbConnection> localConnection = new ThreadLocal<>();
@@ -53,9 +59,17 @@ public class TransactionalDb extends BasicDb {
     public Connection getConnection() throws SQLException {
         Connection con = localConnection.get();
         if (con != null) {
-            return con;
+            return enableSqlLogs ? new ConnectionSpy(con) : con;
         }
-        return new DbConnection(super.getConnection());
+        DbConnection realConnection = new DbConnection(super.getConnection());
+        return enableSqlLogs ? new ConnectionSpy(realConnection) : realConnection;
+    }
+
+    public Connection getConnection(boolean doSqlLog) throws SQLException {
+        if (!enableSqlLogs && doSqlLog) {
+            return new ConnectionSpy(getConnection());
+        }
+        return getConnection();
     }
 
     public boolean isInTransaction() {
@@ -73,10 +87,16 @@ public class TransactionalDb extends BasicDb {
             ((DbConnection)con).txStart = System.currentTimeMillis();
             localConnection.set((DbConnection)con);
             transactionCaches.set(new HashMap<>());
-            return con;
+            return enableSqlLogs ? new ConnectionSpy(con) : con;
         } catch (SQLException e) {
             throw new RuntimeException(e.toString(), e);
         }
+    }
+    public Connection beginTransaction(boolean doSqlLog) {
+        if (!enableSqlLogs && doSqlLog) {
+            return new ConnectionSpy(beginTransaction());
+        }
+        return beginTransaction();
     }
 
     public void commitTransaction() {

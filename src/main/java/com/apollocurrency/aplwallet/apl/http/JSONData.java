@@ -1,18 +1,21 @@
 /*
  * Copyright © 2013-2016 The Nxt Core Developers.
  * Copyright © 2016-2017 Jelurida IP B.V.
- * Copyright © 2017-2018 Apollo Foundation
  *
  * See the LICENSE.txt file at the top-level directory of this distribution
  * for licensing information.
  *
- * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation,
- * no part of the Apl software, including this file, may be copied, modified,
+ * Unless otherwise agreed in a custom licensing agreement with Jelurida B.V.,
+ * no part of the Nxt software, including this file, may be copied, modified,
  * propagated, or distributed except according to the terms contained in the
  * LICENSE.txt file.
  *
  * Removal or modification of this copyright notice is prohibited.
  *
+ */
+
+/*
+ * Copyright © 2018 Apollo Foundation
  */
 
 package com.apollocurrency.aplwallet.apl.http;
@@ -23,6 +26,7 @@ import com.apollocurrency.aplwallet.apl.Currency;
 import com.apollocurrency.aplwallet.apl.crypto.Crypto;
 import com.apollocurrency.aplwallet.apl.crypto.EncryptedData;
 import com.apollocurrency.aplwallet.apl.db.DbIterator;
+import com.apollocurrency.aplwallet.apl.db.DbUtils;
 import com.apollocurrency.aplwallet.apl.peer.Hallmark;
 import com.apollocurrency.aplwallet.apl.peer.Peer;
 import com.apollocurrency.aplwallet.apl.util.Convert;
@@ -30,6 +34,8 @@ import com.apollocurrency.aplwallet.apl.util.Filter;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
 
 public final class JSONData {
@@ -53,10 +59,13 @@ public final class JSONData {
         return json;
     }
 
+    static void putAccountBalancePercentage(JSONObject json, Account account, long totalAmount) {
+        json.put("percentage", String.format("%.4f%%", 100D * account.getBalanceATM() / totalAmount));
+    }
+
     static JSONObject accountBalance(Account account, boolean includeEffectiveBalance) {
         return accountBalance(account, includeEffectiveBalance, Apl.getBlockchain().getHeight());
     }
-
     static JSONObject accountBalance(Account account, boolean includeEffectiveBalance, int height) {
         JSONObject json = new JSONObject();
         if (account == null) {
@@ -298,6 +307,42 @@ public final class JSONData {
         return json;
     }
 
+    static JSONObject getAccountsStatistic(int numberOfAccounts) {
+        //using one connection for 4 queries
+        Connection con = null;
+        try {
+            con = Db.db.getConnection();
+            long totalSupply = Account.getTotalSupply(con);
+            long totalAccounts = Account.getTotalNumberOfAccounts(con);
+            long totalAmountOnTopAccounts = Account.getTotalAmountOnTopAccounts(con, numberOfAccounts);
+            try(DbIterator<Account> topHolders = Account.getTopHolders(con, numberOfAccounts)) {
+                return accounts(topHolders, totalAmountOnTopAccounts, totalSupply, totalAccounts, numberOfAccounts);
+            }
+        }
+        catch (SQLException e) {
+            DbUtils.close(con);
+            throw new RuntimeException(e.toString(), e);
+        }
+    }
+
+    private static JSONObject accounts(DbIterator<Account> topAccountsIterator, long totalAmountOnTopAccounts, long totalSupply, long totalAccounts,
+                                       int numberOfAccounts) {
+        JSONObject result = new JSONObject();
+        result.put("totalSupply", totalSupply);
+        result.put("totalNumberOfAccounts", totalAccounts);
+        result.put("numberOfTopAccounts", numberOfAccounts);
+        result.put("totalAmountOnTopAccounts", totalAmountOnTopAccounts);
+        JSONArray holders = new JSONArray();
+        while (topAccountsIterator.hasNext()) {
+            Account account = topAccountsIterator.next();
+            JSONObject accountJson = JSONData.accountBalance(account, false);
+            JSONData.putAccount(accountJson, "account", account.getId());
+            holders.add(accountJson);
+        }
+        result.put("topHolders", holders);
+        return result;
+    }
+
     static JSONObject availableOffers(CurrencyExchangeOffer.AvailableOffers availableOffers) {
         JSONObject json = new JSONObject();
         json.put("rateATM", String.valueOf(availableOffers.getRateATM()));
@@ -394,13 +439,13 @@ public final class JSONData {
         json.put("blockSignature", Convert.toHexString(block.getBlockSignature()));
         JSONArray transactions = new JSONArray();
         Long totalAmountATM = 0L;
-        for (Transaction transaction: block.getTransactions()) {
-                JSONObject transactionJson = transaction(true, transaction);
-                Long amountATM = Long.parseLong((String) transactionJson.get("amountATM"));
-                totalAmountATM += amountATM;
-                if (includeTransactions) {
-                    transactions.add(transactionJson);
-                }
+        for (Transaction transaction : block.getTransactions()) {
+            JSONObject transactionJson = transaction(true, transaction);
+            Long amountATM = Long.parseLong((String) transactionJson.get("amountATM"));
+            totalAmountATM += amountATM;
+            if (includeTransactions) {
+                transactions.add(transactionJson);
+            }
         }
         json.put("totalAmountATM", String.valueOf(totalAmountATM));
         json.put("transactions", transactions);
@@ -419,6 +464,16 @@ public final class JSONData {
             json.put("executedPhasedTransactions", phasedTransactions);
         }
         return json;
+    }
+
+
+    private static JSONObject accounts(long totalAmountOnTopAccounts, long totalSupply, long totalAccounts, int numberOfAccounts) {
+        JSONObject result = new JSONObject();
+        result.put("totalSupply", totalSupply);
+        result.put("totalNumberOfAccounts", totalAccounts);
+        result.put("totalAmountOnTopAccounts", totalAmountOnTopAccounts);
+        result.put("numberOfTopAccounts", numberOfAccounts);
+        return result;
     }
 
     static JSONObject encryptedData(EncryptedData encryptedData) {

@@ -1,13 +1,12 @@
 /*
  * Copyright © 2013-2016 The Nxt Core Developers.
  * Copyright © 2016-2017 Jelurida IP B.V.
- * Copyright © 2017-2018 Apollo Foundation
  *
  * See the LICENSE.txt file at the top-level directory of this distribution
  * for licensing information.
  *
- * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation,
- * no part of the Apl software, including this file, may be copied, modified,
+ * Unless otherwise agreed in a custom licensing agreement with Jelurida B.V.,
+ * no part of the Nxt software, including this file, may be copied, modified,
  * propagated, or distributed except according to the terms contained in the
  * LICENSE.txt file.
  *
@@ -15,17 +14,15 @@
  *
  */
 
+/*
+ * Copyright © 2018 Apollo Foundation
+ */
+
 package com.apollocurrency.aplwallet.apl.peer;
 
-import com.apollocurrency.aplwallet.apl.Account;
-import com.apollocurrency.aplwallet.apl.Block;
-import com.apollocurrency.aplwallet.apl.Constants;
-import com.apollocurrency.aplwallet.apl.Db;
-import com.apollocurrency.aplwallet.apl.Apl;
-import com.apollocurrency.aplwallet.apl.Transaction;
+import com.apollocurrency.aplwallet.apl.*;
 import com.apollocurrency.aplwallet.apl.http.API;
 import com.apollocurrency.aplwallet.apl.http.APIEnum;
-import com.apollocurrency.aplwallet.apl.Version;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import com.apollocurrency.aplwallet.apl.util.Filter;
 import com.apollocurrency.aplwallet.apl.util.JSON;
@@ -147,8 +144,8 @@ public final class Peers {
 
     static final Collection<PeerImpl> allPeers = Collections.unmodifiableCollection(peers.values());
 
-    static final ExecutorService peersService = new QueuedThreadPool(2, 15);
-    private static final ExecutorService sendingService = Executors.newFixedThreadPool(10);
+    static final ExecutorService peersService = new QueuedThreadPool(2, 15, "Peers service");
+    private static final ExecutorService sendingService = Executors.newFixedThreadPool(10, new ThreadFactoryImpl("Peers sending service"));
 
     static {
 
@@ -350,7 +347,7 @@ public final class Peers {
         final List<Future<String>> unresolvedPeers = Collections.synchronizedList(new ArrayList<>());
 
         if (!Constants.isOffline) {
-            ThreadPool.runBeforeStart(new Runnable() {
+            ThreadPool.runBeforeStart("Peer loader", new Runnable() {
 
                 private final Set<PeerDb.Entry> entries = new HashSet<>();
 
@@ -389,7 +386,7 @@ public final class Peers {
             }, false);
         }
 
-        ThreadPool.runAfterStart(() -> {
+        ThreadPool.runAfterStart("Unresolved peers analyzer",() -> {
             for (Future<String> unresolvedPeer : unresolvedPeers) {
                 try {
                     String badAddress = unresolvedPeer.get(5, TimeUnit.SECONDS);
@@ -451,7 +448,7 @@ public final class Peers {
 
                 peerServer.setHandler(ctxHandler);
                 peerServer.setStopAtShutdown(true);
-                ThreadPool.runBeforeStart(() -> {
+                ThreadPool.runBeforeStart("Peers UPnP ports init", () -> {
                     try {
                         if (enablePeerUPnP) {
                             Connector[] peerConnectors = peerServer.getConnectors();

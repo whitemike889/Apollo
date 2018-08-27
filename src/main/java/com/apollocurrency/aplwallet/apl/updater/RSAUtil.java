@@ -1,16 +1,5 @@
 /*
- * Copyright © 2017-2018 Apollo Foundation
- *
- * See the LICENSE.txt file at the top-level directory of this distribution
- * for licensing information.
- *
- * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation,
- * no part of the Apl software, including this file, may be copied, modified,
- * propagated, or distributed except according to the terms contained in the
- * LICENSE.txt file.
- *
- * Removal or modification of this copyright notice is prohibited.
- *
+ * Copyright © 2018 Apollo Foundation
  */
 
 package com.apollocurrency.aplwallet.apl.updater;
@@ -41,7 +30,7 @@ import static com.apollocurrency.aplwallet.apl.updater.UpdaterUtil.loadResource;
 
 
 public class RSAUtil {
-    private static final String URL_TEMPLATE = "((http)|(https))://.+/ApolloWallet-%s.jar";
+    private static final String URL_TEMPLATE = "((http)|(https))://.+/Apollo-%s.jar";
 
     public static DoubleByteArrayTuple doubleEncrypt(PrivateKey privateKey1, PrivateKey privateKey2, byte[] message) throws Exception {
         byte[] firstEncryptedBytes = encrypt(privateKey1, message);
@@ -92,17 +81,17 @@ public class RSAUtil {
         if (encrypted == null) return null;
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.DECRYPT_MODE, publicKey);
-        
+
         try
         {
            byte[] decrypted = cipher.doFinal(encrypted);
            return decrypted;
         }
-        catch(javax.crypto.BadPaddingException e) 
+        catch(javax.crypto.BadPaddingException e)
         {
             return null;
         }
-        
+
     }
 
     public static byte[] encrypt(String privateKeyPath, byte[] message) throws GeneralSecurityException, IOException, URISyntaxException {
@@ -148,22 +137,24 @@ public class RSAUtil {
         return RSACore.getByteLength(key);
     }
 
+    public static void main(String[] args) {
+        tryDecryptUrl("conf/certs", new DoubleByteArrayTuple(new byte[0], new byte[0]), Version.from("1.0.8"));
+    }
     public static String tryDecryptUrl(String certificateDirectory, DoubleByteArrayTuple encryptedUrl, Version updateVersion) {
         Set<UpdaterUtil.CertificatePair> certificatePairs;
         try {
             certificatePairs = UpdaterUtil.buildCertificatePairs(certificateDirectory);
             for (UpdaterUtil.CertificatePair pair : certificatePairs) {
                 try {
-
                     String urlString = new String(RSAUtil.doubleDecrypt(pair.getFirstCertificate().getPublicKey(), pair.getSecondCertificate().getPublicKey
                             (), encryptedUrl));
                     if (urlString.matches(String.format(URL_TEMPLATE, updateVersion.toString()))) {
+                        Logger.logDebugMessage("Decrypted url using: " + pair);
                         return urlString;
                     }
                 }
                 catch (Exception e) {
-                      Logger.logMessage("Cannot decrypt url.");
-//                    Logger.logErrorMessage("Cannot decrypt url", e);
+                      Logger.logDebugMessage("Cannot decrypt url.");
                 }
             }
         }

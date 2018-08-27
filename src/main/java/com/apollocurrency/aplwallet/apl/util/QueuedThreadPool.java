@@ -1,13 +1,12 @@
 /*
  * Copyright © 2013-2016 The Nxt Core Developers.
  * Copyright © 2016-2017 Jelurida IP B.V.
- * Copyright © 2017-2018 Apollo Foundation
  *
  * See the LICENSE.txt file at the top-level directory of this distribution
  * for licensing information.
  *
- * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation,
- * no part of the Apl software, including this file, may be copied, modified,
+ * Unless otherwise agreed in a custom licensing agreement with Jelurida B.V.,
+ * no part of the Nxt software, including this file, may be copied, modified,
  * propagated, or distributed except according to the terms contained in the
  * LICENSE.txt file.
  *
@@ -15,7 +14,13 @@
  *
  */
 
+/*
+ * Copyright © 2018 Apollo Foundation
+ */
+
 package com.apollocurrency.aplwallet.apl.util;
+
+import com.apollocurrency.aplwallet.apl.ThreadFactoryImpl;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
@@ -49,8 +54,8 @@ public class QueuedThreadPool extends ThreadPoolExecutor {
      * @param   coreSize                Core pool size
      * @param   maxSize                 Maximum pool size
      */
-    public QueuedThreadPool(int coreSize, int maxSize) {
-        super(coreSize, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<>());
+    public QueuedThreadPool(int coreSize, int maxSize, String poolName) {
+        super(coreSize, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<>(), new ThreadFactoryImpl(poolName));
         this.coreSize = coreSize;
         this.maxSize = maxSize;
     }

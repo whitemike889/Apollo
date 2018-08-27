@@ -1,16 +1,5 @@
 /*
- * Copyright © 2017-2018 Apollo Foundation
- *
- * See the LICENSE.txt file at the top-level directory of this distribution
- * for licensing information.
- *
- * Unless otherwise agreed in a custom licensing agreement with Apollo Foundation,
- * no part of the Apl software, including this file, may be copied, modified,
- * propagated, or distributed except according to the terms contained in the
- * LICENSE.txt file.
- *
- * Removal or modification of this copyright notice is prohibited.
- *
+ * Copyright © 2018 Apollo Foundation
  */
 
 package com.apollocurrency.aplwallet.apl.updater;
@@ -260,7 +249,7 @@ public class UpdaterCoreTest {
     public void testProcessTransactions() throws Exception {
         doReturn(true).when(fakeCheckerInstance, "verifyCertificates", CERTIFICATE_DIRECTORY);
         mockStatic(UpdaterDb.class);
-        Version testVersion = Version.from("1.0.7");
+        Version testVersion = Version.from("1.1.0");
         when(fakeMediatorInstance, "getWalletVersion").thenReturn(testVersion);
 
         Platform currentPlatform = Platform.current();
