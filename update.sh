@@ -4,4 +4,5 @@
 # second parameter is a update directory which contains unpacked jar for update
 # third parameter is a boolean flag, which indicates desktop mode
 
+chmod 755 ./update1.sh
 nohup ./update1.sh $1 $2 $3 &
