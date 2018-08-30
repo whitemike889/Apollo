@@ -52,7 +52,7 @@ import java.util.Properties;
 
 public final class Apl {
 
-    public static final Version VERSION = Version.from("1.1.3");
+    public static final Version VERSION = Version.from("1.1.1");
     public static final String APPLICATION = "Apollo";
     private static Thread shutdownHook;
     private static volatile Time time = new Time.EpochTime();
@@ -590,6 +590,9 @@ public final class Apl {
     private Apl() {} // never
 
     private static void initUpdater() {
+        if (!getBooleanProperty("apl.allowUpdates", false)) {
+            return;
+        }
         try {
             Class<?> aClass = Class.forName("com.apollocurrency.aplwallet.apl.updater.UpdaterCore");
             //force load lazy updater instance
