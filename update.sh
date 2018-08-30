@@ -4,5 +4,9 @@
 # second parameter is a update directory which contains unpacked jar for update
 # third parameter is a boolean flag, which indicates desktop mode
 
-chmod 755 ./update1.sh
+echo Updater started
+chmod -v 755 ./update1.sh
+echo "Starting update1.sh in detached process..."
+echo nohup ./update1.sh $1 $2 $3 
+
 nohup ./update1.sh $1 $2 $3 &

@@ -3,6 +3,9 @@
 # first parameter is a current directory, where wallet is executing now (directory, which we should update)
 # second parameter is a update directory which contains unpacked jar for update
 # third parameter is a boolean flag, which indicates desktop mode
+
+echo Apollo update.sh was started... >> /tmp/apl.update.log
+
 if  [[ -d $1 && -d $2 && -n $3 ]]
 then
     echo Starting Platform Dependent Updater
