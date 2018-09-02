@@ -10,5 +10,5 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 #"
 
 chmod 755 $DIR/update1.sh
-nohup $DIR/update1.sh $1 $2 $3 1>/tmp/apollo-update.log /tmp/apollo-update-error.log &
+nohup $DIR/update1.sh $1 $2 $3 1>/tmp/apollo-update.log 2>/tmp/apollo-update-error.log &
 
