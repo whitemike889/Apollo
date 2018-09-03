@@ -249,7 +249,7 @@ public class UpdaterCoreTest {
     public void testProcessTransactions() throws Exception {
         doReturn(true).when(fakeCheckerInstance, "verifyCertificates", CERTIFICATE_DIRECTORY);
         mockStatic(UpdaterDb.class);
-        Version testVersion = Version.from("1.1.0");
+        Version testVersion = Version.from("1.1.5");
         when(fakeMediatorInstance, "getWalletVersion").thenReturn(testVersion);
 
         Platform currentPlatform = Platform.current();
