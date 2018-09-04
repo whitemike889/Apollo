@@ -13,3 +13,5 @@ Apollo.jar
 Apolloservice.jar
 *.iml
 /lib
+apl_test_db
+logs/*
