@@ -29,6 +29,7 @@ public class UpdaterCore {
     private UpdaterCore() {
         Transaction transaction = null;
         boolean isUpdated = false;
+        boolean startUpdater = true;
         try {
             transaction = UpdaterDb.loadLastUpdateTransaction();
             isUpdated = UpdaterDb.getUpdateStatus();
@@ -43,8 +44,8 @@ public class UpdaterCore {
                 if (updateHolder == null) {
                     Logger.logErrorMessage("Unable to validate update transaction: " + transaction.getJSONObject().toJSONString());
                 } else {
-                    if (((TransactionType.Update) updateHolder.getTransaction().getType()).getLevel() == Level.MINOR) {
-                        UpdaterMediator.getInstance().addUpdateListener(updateListener);
+                    if (((TransactionType.Update) updateHolder.getTransaction().getType()).getLevel() != Level.MINOR) {
+                        startUpdater = false;
                     }
                     this.updateDataHolder = updateHolder;
                     startUpdate();
@@ -59,14 +60,17 @@ public class UpdaterCore {
 //                        UpdaterMediator.getInstance().addUpdateListener(updateListener);
                         stopForgingAndBlockAcceptance();
                         UpdaterMediator.getInstance().setUpdateState(UpdateInfo.UpdateState.REQUIRED_MANUAL_INSTALL);
-                        throw new RuntimeException("Manual install required for critical update!");
+                        UpdaterMediator.getInstance().setUpdateData(true, 0,
+                                transaction.getHeight(), Level.CRITICAL, expectedVersion);
+                        startUpdater = false;
+                        Logger.logErrorMessage("Manual install required for critical update!");
                     } else {
                         Logger.logInfoMessage("Skip uninstalled non-critical update");
-                        UpdaterMediator.getInstance().addUpdateListener(updateListener);
                     }
                 }
             }
-        } else {
+        }
+        if (startUpdater) {
             UpdaterMediator.getInstance().addUpdateListener(updateListener);
         }
     }
