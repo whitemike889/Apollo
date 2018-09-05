@@ -10,7 +10,7 @@ then
     NEXT_WAIT_TIME=0
     
     until [ $(ps aux | grep Apollo.jar | wc -l) -eq 0 ] || [ $NEXT_WAIT_TIME -eq 10 ]; do
-	sleep $(( NEXT_WAIT_TIME++ ))
+	sleep `expr $NEXT_WAIT_TIME '+' 1`
 	echo "Waiting more time to stop wallet..."
     done
 
