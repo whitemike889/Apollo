@@ -51,8 +51,7 @@ import java.util.List;
 import java.util.Properties;
 
 public final class Apl {
-
-    public static final Version VERSION = Version.from("1.1.8");
+    public static final Version VERSION = Version.from("1.1.9");
     public static final String APPLICATION = "Apollo";
     private static Thread shutdownHook;
     private static volatile Time time = new Time.EpochTime();
