@@ -20,7 +20,7 @@
 
 package com.apollocurrency.aplwallet.apl;
 
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.db.DbKey;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import com.apollocurrency.aplwallet.apl.util.Filter;
@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.util.*;
 
@@ -40,7 +41,7 @@ final class TransactionImpl implements Transaction {
     static final class BuilderImpl implements Builder {
 
         private final short deadline;
-        private final byte[] senderPublicKey;
+        private final java.security.PublicKey senderPublicKey;
         private final long amountATM;
         private final long feeATM;
         private final TransactionType type;
@@ -69,7 +70,7 @@ final class TransactionImpl implements Transaction {
         private long ecBlockId;
         private short index = -1;
 
-        BuilderImpl(byte version, byte[] senderPublicKey, long amountATM, long feeATM, short deadline,
+        BuilderImpl(byte version, java.security.PublicKey senderPublicKey, long amountATM, long feeATM, short deadline,
                     Attachment.AbstractAttachment attachment) {
             this.version = version;
             this.deadline = deadline;
@@ -224,7 +225,7 @@ final class TransactionImpl implements Transaction {
     }
 
     private final short deadline;
-    private volatile byte[] senderPublicKey;
+    private volatile java.security.PublicKey senderPublicKey;
     private final long recipientId;
     private final long amountATM;
     private final long feeATM;
@@ -327,10 +328,11 @@ final class TransactionImpl implements Transaction {
         } else if (builder.signature != null) {
             this.signature = builder.signature;
         } else if (secretPhrase != null) {
-            if (getSenderPublicKey() != null && ! Arrays.equals(senderPublicKey, Crypto.getPublicKey(secretPhrase))) {
+            KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+            if (getSenderPublicKey() != null && !senderPublicKey.equals(keyPair.getPublic())) {
                 throw new AplException.NotValidException("Secret phrase doesn't match transaction sender public key");
             }
-            signature = Crypto.sign(bytes(), secretPhrase);
+            signature = CryptoComponent.getSigner().sign(bytes(), keyPair.getPrivate());
             bytes = null;
         } else {
             signature = null;
@@ -344,7 +346,7 @@ final class TransactionImpl implements Transaction {
     }
 
     @Override
-    public byte[] getSenderPublicKey() {
+    public java.security.PublicKey getSenderPublicKey() {
         if (senderPublicKey == null) {
             senderPublicKey = Account.getPublicKey(senderId);
         }
@@ -497,8 +499,8 @@ final class TransactionImpl implements Transaction {
                 throw new IllegalStateException("Transaction is not signed yet");
             }
             byte[] data = zeroSignature(getBytes());
-            byte[] signatureHash = Crypto.sha256().digest(signature);
-            MessageDigest digest = Crypto.sha256();
+            byte[] signatureHash = CryptoComponent.getDigestCalculator().calcDigest(signature);
+            MessageDigest digest = CryptoComponent.getDigestCalculator().createDigest();
             digest.update(data);
             fullHash = digest.digest(signatureHash);
             BigInteger bigInteger = new BigInteger(1, new byte[] {fullHash[7], fullHash[6], fullHash[5], fullHash[4], fullHash[3], fullHash[2], fullHash[1], fullHash[0]});
@@ -611,16 +613,16 @@ final class TransactionImpl implements Transaction {
                 buffer.put((byte) ((version << 4) | type.getSubtype()));
                 buffer.putInt(timestamp);
                 buffer.putShort(deadline);
-                buffer.put(getSenderPublicKey());
+                buffer.put(CryptoComponent.getPublicKeyEncoder().encode(getSenderPublicKey()));
                 buffer.putLong(type.canHaveRecipient() ? recipientId : Genesis.CREATOR_ID);
                 buffer.putLong(amountATM);
                 buffer.putLong(feeATM);
                 if (referencedTransactionFullHash != null) {
                     buffer.put(referencedTransactionFullHash);
                 } else {
-                    buffer.put(new byte[32]);
+                    buffer.put(new byte[CryptoComponent.getDigestCalculator().getCalculatedLength()]);
                 }
-                buffer.put(signature != null ? signature : new byte[64]);
+                buffer.put(signature != null ? signature : new byte[CryptoComponent.getSigner().getSignatureLength()]);
                 buffer.putInt(getFlags());
                 buffer.putInt(ecBlockHeight);
                 buffer.putLong(ecBlockId);
@@ -648,12 +650,13 @@ final class TransactionImpl implements Transaction {
             subtype = (byte) (subtype & 0x0F);
             int timestamp = buffer.getInt();
             short deadline = buffer.getShort();
-            byte[] senderPublicKey = new byte[32];
-            buffer.get(senderPublicKey);
+            byte[] senderPublicKeyBytes = new byte[CryptoComponent.getPublicKeyEncoder().getEncodedLength()];
+            buffer.get(senderPublicKeyBytes);
+            java.security.PublicKey senderPublicKey = CryptoComponent.getPublicKeyEncoder().decode(senderPublicKeyBytes);
             long recipientId = buffer.getLong();
             long amountATM = buffer.getLong();
             long feeATM = buffer.getLong();
-            byte[] referencedTransactionFullHash = new byte[32];
+            byte[] referencedTransactionFullHash = new byte[CryptoComponent.getDigestCalculator().getCalculatedLength()];
             buffer.get(referencedTransactionFullHash);
             referencedTransactionFullHash = Convert.emptyToNull(referencedTransactionFullHash);
             byte[] signature = new byte[64];
@@ -754,7 +757,7 @@ final class TransactionImpl implements Transaction {
         json.put("subtype", type.getSubtype());
         json.put("timestamp", timestamp);
         json.put("deadline", deadline);
-        json.put("senderPublicKey", Convert.toHexString(getSenderPublicKey()));
+        json.put("senderPublicKey", Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(getSenderPublicKey())));
         if (type.canHaveRecipient()) {
             json.put("recipient", Long.toUnsignedString(recipientId));
         }
@@ -808,7 +811,7 @@ final class TransactionImpl implements Transaction {
             byte subtype = ((Long) transactionData.get("subtype")).byteValue();
             int timestamp = ((Long) transactionData.get("timestamp")).intValue();
             short deadline = ((Long) transactionData.get("deadline")).shortValue();
-            byte[] senderPublicKey = Convert.parseHexString((String) transactionData.get("senderPublicKey"));
+            java.security.PublicKey senderPublicKey = CryptoComponent.getPublicKeyEncoder().decode(Convert.parseHexString((String) transactionData.get("senderPublicKey")));
             long amountATM = transactionData.containsKey("amountATM") ? Convert.parseLong(transactionData.get("amountATM")) : Convert.parseLong(transactionData.get("amountNQT"));
             long feeATM = transactionData.containsKey("feeATM") ? Convert.parseLong(transactionData.get("feeATM")) : Convert.parseLong(transactionData.get("feeNQT"));
             String referencedTransactionFullHash = (String) transactionData.get("referencedTransactionFullHash");
@@ -884,7 +887,7 @@ final class TransactionImpl implements Transaction {
 
     private boolean checkSignature() {
         if (!hasValidSignature) {
-            hasValidSignature = signature != null && Crypto.verify(signature, zeroSignature(getBytes()), getSenderPublicKey());
+            hasValidSignature = signature != null && CryptoComponent.getSigner().verify(zeroSignature(getBytes()), signature, getSenderPublicKey());
         }
         return hasValidSignature;
     }

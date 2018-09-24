@@ -23,7 +23,7 @@ package com.apollocurrency.aplwallet.apl.tools;
 import com.apollocurrency.aplwallet.apl.Account;
 import com.apollocurrency.aplwallet.apl.Apl;
 import com.apollocurrency.aplwallet.apl.Db;
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
+
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.slf4j.Logger;
 

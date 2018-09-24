@@ -23,8 +23,8 @@ package com.apollocurrency.aplwallet.apl;
 import com.apollocurrency.aplwallet.apl.AccountLedger.LedgerEntry;
 import com.apollocurrency.aplwallet.apl.AccountLedger.LedgerEvent;
 import com.apollocurrency.aplwallet.apl.AccountLedger.LedgerHolding;
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
-import com.apollocurrency.aplwallet.apl.crypto.EncryptedData;
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
+import com.apollocurrency.aplwallet.apl.crypto.legacy.Crypto;
 import com.apollocurrency.aplwallet.apl.db.*;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import com.apollocurrency.aplwallet.apl.util.Listener;
@@ -255,7 +255,7 @@ public final class Account {
         }
 
     };
-    private static final ConcurrentMap<DbKey, byte[]> publicKeyCache = Apl.getBooleanProperty("apl.enablePublicKeyCache") ?
+    private static final ConcurrentMap<DbKey, java.security.PublicKey> publicKeyCache = Apl.getBooleanProperty("apl.enablePublicKeyCache") ?
             new ConcurrentHashMap<>() : null;
     private static final Listeners<Account, Event> listeners = new Listeners<>();
     private static final Listeners<AccountAsset, Event> assetListeners = new Listeners<>();
@@ -315,7 +315,7 @@ public final class Account {
                     }
                     if (transaction.getType() == ShufflingTransaction.SHUFFLING_RECIPIENTS) {
                         Attachment.ShufflingRecipients shufflingRecipients = (Attachment.ShufflingRecipients) transaction.getAttachment();
-                        for (byte[] publicKey : shufflingRecipients.getRecipientPublicKeys()) {
+                        for (java.security.PublicKey publicKey : shufflingRecipients.getRecipientPublicKeys()) {
                             publicKeyCache.remove(accountDbKeyFactory.newKey(Account.getId(publicKey)));
                         }
                     }
@@ -515,7 +515,7 @@ public final class Account {
         return account;
     }
 
-    public static Account getAccount(byte[] publicKey) {
+    public static Account getAccount(java.security.PublicKey publicKey) {
         long accountId = getId(publicKey);
         Account account = getAccount(accountId);
         if (account == null) {
@@ -524,11 +524,14 @@ public final class Account {
         if (account.publicKey == null) {
             account.publicKey = getPublicKey(accountDbKeyFactory.newKey(account));
         }
-        if (account.publicKey == null || account.publicKey.publicKey == null || Arrays.equals(account.publicKey.publicKey, publicKey)) {
+        if (account.publicKey == null || account.publicKey.publicKey == null || account.publicKey.publicKey.equals(publicKey)) {
             return account;
         }
         throw new RuntimeException("DUPLICATE KEY for account " + Long.toUnsignedString(accountId)
-                + " existing key " + Convert.toHexString(account.publicKey.publicKey) + " new key " + Convert.toHexString(publicKey));
+                + " existing key " +
+                Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(account.publicKey.publicKey)) +
+                " new key " +
+                Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(publicKey)));
     }
 
     public static DbIterator<Account> getTopHolders(Connection con, int numberOfTopAccounts) throws SQLException {
@@ -614,14 +617,14 @@ public final class Account {
         }
     }
 
-    public static long getId(byte[] publicKey) {
-        byte[] publicKeyHash = Crypto.sha256().digest(publicKey);
+    public static long getId(java.security.PublicKey publicKey) {
+        byte[] publicKeyHash = CryptoComponent.getDigestCalculator().calcDigest(CryptoComponent.getPublicKeyEncoder().encode(publicKey));
         return Convert.fullHashToId(publicKeyHash);
     }
 
-    public static byte[] getPublicKey(long id) {
+    public static java.security.PublicKey getPublicKey(long id) {
         DbKey dbKey = publicKeyDbKeyFactory.newKey(id);
-        byte[] key = null;
+        java.security.PublicKey key = null;
         if (publicKeyCache != null) {
             key = publicKeyCache.get(dbKey);
         }
@@ -805,7 +808,7 @@ public final class Account {
         return decrypted;
     }
 
-    static boolean setOrVerify(long accountId, byte[] key) {
+    static boolean setOrVerify(long accountId, java.security.PublicKey key) {
         DbKey dbKey = publicKeyDbKeyFactory.newKey(accountId);
         PublicKey publicKey = getPublicKey(dbKey);
         if (publicKey == null) {
@@ -816,7 +819,7 @@ public final class Account {
             publicKey.height = Apl.getBlockchain().getHeight();
             return true;
         }
-        return Arrays.equals(publicKey.publicKey, key);
+        return publicKey.publicKey.equals(key);
     }
 
     private static void checkBalance(long accountId, long confirmed, long unconfirmed) {
@@ -1175,11 +1178,11 @@ public final class Account {
         propertyListeners.notify(accountProperty, Event.DELETE_PROPERTY);
     }
 
-    void apply(byte[] key) {
+    void apply(java.security.PublicKey key) {
         apply(key, false);
     }
 
-    void apply(byte[] key, boolean isGenesis) {
+    void apply(java.security.PublicKey key, boolean isGenesis) {
         PublicKey publicKey = getPublicKey(dbKey);
         if (publicKey == null) {
             publicKey = publicKeyTable.newEntity(dbKey);
@@ -1191,7 +1194,7 @@ public final class Account {
             } else {
                 publicKeyTable.insert(publicKey);
             }
-        } else if (!Arrays.equals(publicKey.publicKey, key)) {
+        } else if (!publicKey.publicKey.equals(key)) {
             throw new IllegalStateException("Public key mismatch");
         } else if (publicKey.height >= Apl.getBlockchain().getHeight() - 1) {
             PublicKey dbPublicKey = getPublicKey(dbKey, false);
@@ -1868,10 +1871,10 @@ public final class Account {
 
         private final long accountId;
         private final DbKey dbKey;
-        private byte[] publicKey;
+        private java.security.PublicKey publicKey;
         private int height;
 
-        private PublicKey(long accountId, byte[] publicKey) {
+        private PublicKey(long accountId, java.security.PublicKey publicKey) {
             this.accountId = accountId;
             this.dbKey = publicKeyDbKeyFactory.newKey(accountId);
             this.publicKey = publicKey;
@@ -1881,7 +1884,7 @@ public final class Account {
         private PublicKey(ResultSet rs, DbKey dbKey) throws SQLException {
             this.accountId = rs.getLong("account_id");
             this.dbKey = dbKey;
-            this.publicKey = rs.getBytes("public_key");
+            this.publicKey = CryptoComponent.getPublicKeyEncoder().decode(rs.getBytes("public_key"));
             this.height = rs.getInt("height");
         }
 
@@ -1889,7 +1892,7 @@ public final class Account {
             return accountId;
         }
 
-        public byte[] getPublicKey() {
+        public java.security.PublicKey getPublicKey() {
             return publicKey;
         }
 
@@ -1929,7 +1932,7 @@ public final class Account {
                     + "KEY (account_id, height) VALUES (?, ?, ?, TRUE)")) {
                 int i = 0;
                 pstmt.setLong(++i, publicKey.accountId);
-                DbUtils.setBytes(pstmt, ++i, publicKey.publicKey);
+                DbUtils.setBytes(pstmt, ++i, CryptoComponent.getPublicKeyEncoder().encode(publicKey.publicKey));
                 pstmt.setInt(++i, publicKey.height);
                 pstmt.executeUpdate();
             }

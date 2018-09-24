@@ -20,8 +20,7 @@
 
 package com.apollocurrency.aplwallet.apl;
 
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
-import com.apollocurrency.aplwallet.apl.crypto.EncryptedData;
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.updater.Architecture;
 import com.apollocurrency.aplwallet.apl.updater.DoubleByteArrayTuple;
 import com.apollocurrency.aplwallet.apl.updater.Platform;
@@ -2801,7 +2800,7 @@ public interface Attachment extends Appendix {
 
     final class ShufflingProcessing extends AbstractShufflingAttachment implements Prunable {
 
-        private static final byte[] emptyDataHash = Crypto.sha256().digest();
+        private static final byte[] emptyDataHash = CryptoComponent.getDigestCalculator().createDigest().digest();
 
         static ShufflingProcessing parse(JSONObject attachmentData) {
             if (!Appendix.hasAppendix(ShufflingTransaction.SHUFFLING_PROCESSING.getName(), attachmentData)) {
@@ -2888,7 +2887,7 @@ public interface Attachment extends Appendix {
             if (hash != null) {
                 return hash;
             } else if (data != null) {
-                MessageDigest digest = Crypto.sha256();
+                MessageDigest digest = CryptoComponent.getDigestCalculator().createDigest();
                 for (byte[] bytes : data) {
                     digest.update(bytes);
                 }
@@ -2923,7 +2922,7 @@ public interface Attachment extends Appendix {
 
     final class ShufflingRecipients extends AbstractShufflingAttachment {
 
-        private final byte[][] recipientPublicKeys;
+        private final java.security.PublicKey[] recipientPublicKeys;
 
         ShufflingRecipients(ByteBuffer buffer) throws AplException.NotValidException {
             super(buffer);
@@ -2931,23 +2930,24 @@ public interface Attachment extends Appendix {
             if (count > Constants.MAX_NUMBER_OF_SHUFFLING_PARTICIPANTS || count < 0) {
                 throw new AplException.NotValidException("Invalid data count " + count);
             }
-            this.recipientPublicKeys = new byte[count][];
+            this.recipientPublicKeys = new java.security.PublicKey[count];
             for (int i = 0; i < count; i++) {
-                this.recipientPublicKeys[i] = new byte[32];
-                buffer.get(this.recipientPublicKeys[i]);
+                byte[] publicKeyBytes = new byte[CryptoComponent.getPublicKeyEncoder().getEncodedLength()];
+                buffer.get(publicKeyBytes);
+                this.recipientPublicKeys[i] = CryptoComponent.getPublicKeyEncoder().decode(publicKeyBytes);
             }
         }
 
         ShufflingRecipients(JSONObject attachmentData) {
             super(attachmentData);
             JSONArray jsonArray = (JSONArray)attachmentData.get("recipientPublicKeys");
-            this.recipientPublicKeys = new byte[jsonArray.size()][];
+            this.recipientPublicKeys = new java.security.PublicKey[jsonArray.size()];
             for (int i = 0; i < this.recipientPublicKeys.length; i++) {
-                this.recipientPublicKeys[i] = Convert.parseHexString((String)jsonArray.get(i));
+                this.recipientPublicKeys[i] = CryptoComponent.getPublicKeyEncoder().decode(Convert.parseHexString((String)jsonArray.get(i)));
             }
         }
 
-        ShufflingRecipients(long shufflingId, byte[][] recipientPublicKeys, byte[] shufflingStateHash) {
+        ShufflingRecipients(long shufflingId, java.security.PublicKey[] recipientPublicKeys, byte[] shufflingStateHash) {
             super(shufflingId, shufflingStateHash);
             this.recipientPublicKeys = recipientPublicKeys;
         }
@@ -2964,8 +2964,9 @@ public interface Attachment extends Appendix {
         void putMyBytes(ByteBuffer buffer) {
             super.putMyBytes(buffer);
             buffer.put((byte)recipientPublicKeys.length);
-            for (byte[] bytes : recipientPublicKeys) {
-                buffer.put(bytes);
+            for (java.security.PublicKey key : recipientPublicKeys) {
+                byte[] keyBytes = CryptoComponent.getPublicKeyEncoder().encode(key);
+                buffer.put(keyBytes);
             }
         }
 
@@ -2974,8 +2975,8 @@ public interface Attachment extends Appendix {
             super.putMyJSON(attachment);
             JSONArray jsonArray = new JSONArray();
             attachment.put("recipientPublicKeys", jsonArray);
-            for (byte[] bytes : recipientPublicKeys) {
-                jsonArray.add(Convert.toHexString(bytes));
+            for (java.security.PublicKey key : recipientPublicKeys) {
+                jsonArray.add(Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(key)));
             }
         }
 
@@ -2984,7 +2985,7 @@ public interface Attachment extends Appendix {
             return ShufflingTransaction.SHUFFLING_RECIPIENTS;
         }
 
-        public byte[][] getRecipientPublicKeys() {
+        public java.security.PublicKey[] getRecipientPublicKeys() {
             return recipientPublicKeys;
         }
 
@@ -3131,7 +3132,7 @@ public interface Attachment extends Appendix {
         }
 
         byte[] getHash() {
-            MessageDigest digest = Crypto.sha256();
+            MessageDigest digest = CryptoComponent.getDigestCalculator().createDigest();
             for (byte[] bytes : blameData) {
                 digest.update(bytes);
             }
@@ -3237,7 +3238,7 @@ public interface Attachment extends Appendix {
             if (data == null) {
                 return null;
             }
-            MessageDigest digest = Crypto.sha256();
+            MessageDigest digest = CryptoComponent.getDigestCalculator().createDigest();
             digest.update(Convert.toBytes(name));
             digest.update(Convert.toBytes(description));
             digest.update(Convert.toBytes(tags));

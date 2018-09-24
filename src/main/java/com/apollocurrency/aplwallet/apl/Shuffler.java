@@ -20,7 +20,7 @@
 
 package com.apollocurrency.aplwallet.apl;
 
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
+
 import com.apollocurrency.aplwallet.apl.db.DbIterator;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.slf4j.Logger;

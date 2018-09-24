@@ -22,7 +22,7 @@ package com.apollocurrency.aplwallet.apl.http;
 
 import com.apollocurrency.aplwallet.apl.Account;
 import com.apollocurrency.aplwallet.apl.Shuffler;
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
+
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 

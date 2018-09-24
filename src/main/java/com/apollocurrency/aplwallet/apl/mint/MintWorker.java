@@ -21,7 +21,7 @@
 package com.apollocurrency.aplwallet.apl.mint;
 
 import com.apollocurrency.aplwallet.apl.*;
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
+
 import com.apollocurrency.aplwallet.apl.crypto.HashFunction;
 import com.apollocurrency.aplwallet.apl.http.API;
 import com.apollocurrency.aplwallet.apl.util.Convert;
@@ -58,7 +58,7 @@ public class MintWorker {
         }
         boolean isSubmitted = Apl.getBooleanProperty("apl.mint.isSubmitted");
         boolean isStopOnError = Apl.getBooleanProperty("apl.mint.stopOnError");
-        byte[] publicKeyHash = Crypto.sha256().digest(Crypto.getPublicKey(secretPhrase));
+        byte[] publicKeyHash = CryptoComponent.getDigestCalculator().createDigest().digest(Crypto.getPublicKey(secretPhrase));
         long accountId = Convert.fullHashToId(publicKeyHash);
         String rsAccount = Convert.rsAccount(accountId);
         JSONObject currency = getCurrency(currencyCode);

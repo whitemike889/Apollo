@@ -20,7 +20,7 @@
 
 package com.apollocurrency.aplwallet.apl;
 
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
+
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import com.apollocurrency.aplwallet.apl.util.Listener;
 import com.apollocurrency.aplwallet.apl.util.Listeners;
@@ -249,7 +249,7 @@ public final class Generator implements Comparable<Generator> {
                 || Constants.isOffline);
     }
 
-    static boolean allowsFakeForging(byte[] publicKey) {
+    static boolean allowsFakeForging(java.security.PublicKey publicKey) {
         return Constants.isTestnet && publicKey != null && Arrays.equals(publicKey, fakeForgingPublicKey);
     }
 
@@ -257,7 +257,7 @@ public final class Generator implements Comparable<Generator> {
         if (allowsFakeForging(publicKey)) {
             return BigInteger.ZERO;
         }
-        MessageDigest digest = Crypto.sha256();
+        MessageDigest digest = CryptoComponent.getDigestCalculator().createDigest();
         digest.update(block.getGenerationSignature());
         byte[] generationSignatureHash = digest.digest(publicKey);
         return new BigInteger(1, new byte[] {generationSignatureHash[7], generationSignatureHash[6], generationSignatureHash[5], generationSignatureHash[4], generationSignatureHash[3], generationSignatureHash[2], generationSignatureHash[1], generationSignatureHash[0]});

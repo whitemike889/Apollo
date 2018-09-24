@@ -26,7 +26,7 @@ import com.apollocurrency.aplwallet.apl.Currency;
 import com.apollocurrency.aplwallet.apl.FundingMonitor;
 import com.apollocurrency.aplwallet.apl.HoldingType;
 import com.apollocurrency.aplwallet.apl.AplException;
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
+
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 

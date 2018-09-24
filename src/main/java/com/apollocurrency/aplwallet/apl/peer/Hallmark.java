@@ -22,7 +22,7 @@ package com.apollocurrency.aplwallet.apl.peer;
 
 import com.apollocurrency.aplwallet.apl.Account;
 import com.apollocurrency.aplwallet.apl.Constants;
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
+
 import com.apollocurrency.aplwallet.apl.util.Convert;
 
 import java.net.URI;

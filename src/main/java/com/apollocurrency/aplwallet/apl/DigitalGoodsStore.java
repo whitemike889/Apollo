@@ -22,7 +22,7 @@
 package com.apollocurrency.aplwallet.apl;
 
 import com.apollocurrency.aplwallet.apl.AccountLedger.LedgerEvent;
-import com.apollocurrency.aplwallet.apl.crypto.EncryptedData;
+
 import com.apollocurrency.aplwallet.apl.db.DbClause;
 import com.apollocurrency.aplwallet.apl.db.DbIterator;
 import com.apollocurrency.aplwallet.apl.db.DbKey;

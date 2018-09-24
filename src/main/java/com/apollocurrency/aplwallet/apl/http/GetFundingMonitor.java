@@ -23,7 +23,7 @@ package com.apollocurrency.aplwallet.apl.http;
 import com.apollocurrency.aplwallet.apl.Account;
 import com.apollocurrency.aplwallet.apl.FundingMonitor;
 import com.apollocurrency.aplwallet.apl.HoldingType;
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
+
 import com.apollocurrency.aplwallet.apl.util.Filter;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;

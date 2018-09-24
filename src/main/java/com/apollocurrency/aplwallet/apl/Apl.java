@@ -21,7 +21,7 @@
 package com.apollocurrency.aplwallet.apl;
 
 import com.apollocurrency.aplwallet.apl.addons.AddOns;
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
+
 import com.apollocurrency.aplwallet.apl.env.DirProvider;
 import com.apollocurrency.aplwallet.apl.env.RuntimeEnvironment;
 import com.apollocurrency.aplwallet.apl.env.RuntimeMode;
@@ -309,7 +309,7 @@ public final class Apl {
         return TransactionProcessorImpl.getInstance();
     }
 
-    public static Transaction.Builder newTransactionBuilder(byte[] senderPublicKey, long amountATM, long feeATM, short deadline, Attachment attachment) {
+    public static Transaction.Builder newTransactionBuilder(java.security.PublicKey senderPublicKey, long amountATM, long feeATM, short deadline, Attachment attachment) {
         return new TransactionImpl.BuilderImpl((byte)1, senderPublicKey, amountATM, feeATM, deadline, (Attachment.AbstractAttachment)attachment);
     }
 

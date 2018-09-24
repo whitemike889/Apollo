@@ -20,7 +20,7 @@
 
 package com.apollocurrency.aplwallet.apl;
 
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.db.DbIterator;
 import com.apollocurrency.aplwallet.apl.db.DerivedDbTable;
 import com.apollocurrency.aplwallet.apl.db.FilteringIterator;
@@ -35,6 +35,7 @@ import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 
 import java.math.BigInteger;
+import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.sql.*;
 import java.util.*;
@@ -1344,7 +1345,7 @@ final class BlockchainProcessorImpl implements BlockchainProcessor {
             throw new BlockNotAcceptedException("Block timestamp " + block.getTimestamp() + " is before previous block timestamp "
                     + previousLastBlock.getTimestamp(), block);
         }
-        if (!Arrays.equals(Crypto.sha256().digest(previousLastBlock.bytes()), block.getPreviousBlockHash())) {
+        if (!Arrays.equals(CryptoComponent.getDigestCalculator().calcDigest(previousLastBlock.bytes()), block.getPreviousBlockHash())) {
             throw new BlockNotAcceptedException("Previous block hash doesn't match", block);
         }
         if (block.getId() == 0L || BlockDb.hasBlock(block.getId(), previousLastBlock.getHeight())) {
@@ -1371,7 +1372,7 @@ final class BlockchainProcessorImpl implements BlockchainProcessor {
         long payloadLength = 0;
         long calculatedTotalAmount = 0;
         long calculatedTotalFee = 0;
-        MessageDigest digest = Crypto.sha256();
+        MessageDigest digest = CryptoComponent.getDigestCalculator().createDigest();
         boolean hasPrunedTransactions = false;
         for (TransactionImpl transaction : block.getTransactions()) {
             if (transaction.getTimestamp() > curTime + Constants.MAX_TIMEDRIFT) {
@@ -1613,7 +1614,7 @@ final class BlockchainProcessorImpl implements BlockchainProcessor {
     }
 
     private boolean verifyChecksum(byte[] validChecksum, int fromHeight, int toHeight) {
-        MessageDigest digest = Crypto.sha256();
+        MessageDigest digest = CryptoComponent.getDigestCalculator().createDigest();
         try (Connection con = Db.db.getConnection();
              PreparedStatement pstmt = con.prepareStatement(
                      "SELECT * FROM transaction WHERE height > ? AND height <= ? ORDER BY id ASC, timestamp ASC")) {
@@ -1706,7 +1707,7 @@ final class BlockchainProcessorImpl implements BlockchainProcessor {
         TransactionProcessorImpl.getInstance().processWaitingTransactions();
         SortedSet<UnconfirmedTransaction> sortedTransactions = selectUnconfirmedTransactions(duplicates, previousBlock, blockTimestamp);
         List<TransactionImpl> blockTransactions = new ArrayList<>();
-        MessageDigest digest = Crypto.sha256();
+        MessageDigest digest = CryptoComponent.getDigestCalculator().createDigest();
         long totalAmountATM = 0;
         long totalFeeATM = 0;
         int payloadLength = 0;
@@ -1720,12 +1721,13 @@ final class BlockchainProcessorImpl implements BlockchainProcessor {
         }
         byte[] payloadHash = digest.digest();
         digest.update(previousBlock.getGenerationSignature());
-        final byte[] publicKey = Crypto.getPublicKey(secretPhrase);
-        byte[] generationSignature = digest.digest(publicKey);
-        byte[] previousBlockHash = Crypto.sha256().digest(previousBlock.bytes());
+
+        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+        byte[] generationSignature = digest.digest(CryptoComponent.getPublicKeyEncoder().encode(keyPair.getPublic()));
+        byte[] previousBlockHash = CryptoComponent.getDigestCalculator().calcDigest(previousBlock.bytes());
 
         BlockImpl block = new BlockImpl(getBlockVersion(previousBlock.getHeight()), blockTimestamp, previousBlock.getId(), totalAmountATM, totalFeeATM, payloadLength,
-                payloadHash, publicKey, generationSignature, previousBlockHash, blockTransactions, secretPhrase);
+                payloadHash, keyPair.getPublic(), generationSignature, previousBlockHash, blockTransactions, secretPhrase);
 
         try {
             pushBlock(block);

@@ -23,8 +23,8 @@ package com.apollocurrency.aplwallet.apl.http;
 import com.apollocurrency.aplwallet.apl.*;
 import com.apollocurrency.aplwallet.apl.AccountLedger.LedgerEntry;
 import com.apollocurrency.aplwallet.apl.Currency;
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
-import com.apollocurrency.aplwallet.apl.crypto.EncryptedData;
+
+
 import com.apollocurrency.aplwallet.apl.db.DbIterator;
 import com.apollocurrency.aplwallet.apl.db.DbUtils;
 import com.apollocurrency.aplwallet.apl.peer.Hallmark;
@@ -981,7 +981,7 @@ public final class JSONData {
         byte[] signature = Convert.emptyToNull(transaction.getSignature());
         if (signature != null) {
             json.put("signature", Convert.toHexString(signature));
-            json.put("signatureHash", Convert.toHexString(Crypto.sha256().digest(signature)));
+            json.put("signatureHash", Convert.toHexString(CryptoComponent.getDigestCalculator().createDigest().digest(signature)));
             json.put("fullHash", transaction.getFullHash());
             json.put("transaction", transaction.getStringId());
         }

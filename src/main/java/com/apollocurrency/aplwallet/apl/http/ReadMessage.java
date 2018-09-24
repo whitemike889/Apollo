@@ -21,8 +21,8 @@
 package com.apollocurrency.aplwallet.apl.http;
 
 import com.apollocurrency.aplwallet.apl.*;
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
-import com.apollocurrency.aplwallet.apl.crypto.EncryptedData;
+
+
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;

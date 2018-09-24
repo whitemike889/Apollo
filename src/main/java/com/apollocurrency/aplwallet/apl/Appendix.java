@@ -21,14 +21,16 @@
 package com.apollocurrency.aplwallet.apl;
 
 import com.apollocurrency.aplwallet.apl.AccountLedger.LedgerEvent;
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
-import com.apollocurrency.aplwallet.apl.crypto.EncryptedData;
+
+
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
+import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.util.*;
 
@@ -442,7 +444,7 @@ public interface Appendix {
             if (hash != null) {
                 return hash;
             }
-            MessageDigest digest = Crypto.sha256();
+            MessageDigest digest = CryptoComponent.getDigestCalculator().createDigest();
             digest.update((byte)(isText ? 1 : 0));
             digest.update(message);
             return digest.digest();
@@ -764,7 +766,7 @@ public interface Appendix {
             if (hash != null) {
                 return hash;
             }
-            MessageDigest digest = Crypto.sha256();
+            MessageDigest digest = CryptoComponent.getDigestCalculator().createDigest();
             digest.update((byte)(isText ? 1 : 0));
             digest.update((byte)(isCompressed ? 1 : 0));
             digest.update(encryptedData.getData());
@@ -1098,7 +1100,8 @@ public interface Appendix {
 
         @Override
         public void encrypt(String secretPhrase) {
-            setEncryptedData(EncryptedData.encrypt(getPlaintext(), secretPhrase, Crypto.getPublicKey(secretPhrase)));
+            KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+            setEncryptedData(EncryptedData.encrypt(getPlaintext(), secretPhrase, keyPair.getPublic()));
         }
 
         @Override
@@ -1123,20 +1126,21 @@ public interface Appendix {
             return new PublicKeyAnnouncement(attachmentData);
         }
 
-        private final byte[] publicKey;
+        private final java.security.PublicKey publicKey;
 
         PublicKeyAnnouncement(ByteBuffer buffer) {
             super(buffer);
-            this.publicKey = new byte[32];
-            buffer.get(this.publicKey);
+            byte[] publicKeyBytes = new byte[CryptoComponent.getPublicKeyEncoder().getEncodedLength()];
+            buffer.get(publicKeyBytes);
+            this.publicKey = CryptoComponent.getPublicKeyEncoder().decode(publicKeyBytes);
         }
 
         PublicKeyAnnouncement(JSONObject attachmentData) {
             super(attachmentData);
-            this.publicKey = Convert.parseHexString((String)attachmentData.get("recipientPublicKey"));
+            this.publicKey = CryptoComponent.getPublicKeyEncoder().decode(Convert.parseHexString((String)attachmentData.get("recipientPublicKey")));
         }
 
-        public PublicKeyAnnouncement(byte[] publicKey) {
+        public PublicKeyAnnouncement(java.security.PublicKey publicKey) {
             this.publicKey = publicKey;
         }
 
@@ -1152,12 +1156,12 @@ public interface Appendix {
 
         @Override
         void putMyBytes(ByteBuffer buffer) {
-            buffer.put(publicKey);
+            buffer.put(CryptoComponent.getPublicKeyEncoder().encode(publicKey));
         }
 
         @Override
         void putMyJSON(JSONObject json) {
-            json.put("recipientPublicKey", Convert.toHexString(publicKey));
+            json.put("recipientPublicKey", Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(publicKey)));
         }
 
         @Override
@@ -1165,15 +1169,12 @@ public interface Appendix {
             if (transaction.getRecipientId() == 0) {
                 throw new AplException.NotValidException("PublicKeyAnnouncement cannot be attached to transactions with no recipient");
             }
-            if (!Crypto.isCanonicalPublicKey(publicKey)) {
-                throw new AplException.NotValidException("Invalid recipient public key: " + Convert.toHexString(publicKey));
-            }
             long recipientId = transaction.getRecipientId();
             if (Account.getId(this.publicKey) != recipientId) {
                 throw new AplException.NotValidException("Announced public key does not match recipient accountId");
             }
-            byte[] recipientPublicKey = Account.getPublicKey(recipientId);
-            if (recipientPublicKey != null && ! Arrays.equals(publicKey, recipientPublicKey)) {
+            java.security.PublicKey recipientPublicKey = Account.getPublicKey(recipientId);
+            if (recipientPublicKey != null && !publicKey.equals(recipientPublicKey)) {
                 throw new AplException.NotCurrentlyValidException("A different public key for this account has already been announced");
             }
         }
@@ -1190,7 +1191,7 @@ public interface Appendix {
             return false;
         }
 
-        public byte[] getPublicKey() {
+        public java.security.PublicKey getPublicKey() {
             return publicKey;
         }
 

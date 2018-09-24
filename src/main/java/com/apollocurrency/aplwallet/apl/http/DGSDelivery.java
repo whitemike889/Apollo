@@ -25,7 +25,7 @@ import com.apollocurrency.aplwallet.apl.Attachment;
 import com.apollocurrency.aplwallet.apl.Constants;
 import com.apollocurrency.aplwallet.apl.DigitalGoodsStore;
 import com.apollocurrency.aplwallet.apl.AplException;
-import com.apollocurrency.aplwallet.apl.crypto.EncryptedData;
+
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.json.simple.JSONStreamAware;
 

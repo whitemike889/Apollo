@@ -23,7 +23,7 @@ package com.apollocurrency.aplwallet.apl.tools;
 import com.apollocurrency.aplwallet.apl.Apl;
 import com.apollocurrency.aplwallet.apl.AplException;
 import com.apollocurrency.aplwallet.apl.Transaction;
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
+
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -58,7 +58,7 @@ public final class SignTransactionJSON {
             }
             try (BufferedReader reader = new BufferedReader(new FileReader(unsigned))){
                 JSONObject json = (JSONObject) JSONValue.parseWithException(reader);
-                byte[] publicKeyHash = Crypto.sha256().digest(Convert.parseHexString((String) json.get("senderPublicKey")));
+                byte[] publicKeyHash = CryptoComponent.getDigestCalculator().createDigest().digest(Convert.parseHexString((String) json.get("senderPublicKey")));
                 String senderRS = Convert.rsAccount(Convert.fullHashToId(publicKeyHash));
                 String secretPhrase;
                 Console console = System.console();

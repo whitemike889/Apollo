@@ -68,7 +68,7 @@ public interface Transaction {
 
     long getSenderId();
 
-    byte[] getSenderPublicKey();
+    java.security.PublicKey getSenderPublicKey();
 
     long getRecipientId();
 

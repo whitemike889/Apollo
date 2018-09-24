@@ -21,12 +21,14 @@
 package com.apollocurrency.aplwallet.apl.http;
 
 import com.apollocurrency.aplwallet.apl.*;
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
+
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 
 import javax.servlet.http.HttpServletRequest;
+import java.security.KeyPair;
 import java.util.Arrays;
 
 import static com.apollocurrency.aplwallet.apl.http.JSONResponses.*;
@@ -153,7 +155,7 @@ abstract class CreateTransaction extends APIServlet.APIRequestHandler {
         Appendix.PublicKeyAnnouncement publicKeyAnnouncement = null;
         String recipientPublicKey = Convert.emptyToNull(req.getParameter("recipientPublicKey"));
         if (recipientPublicKey != null) {
-            publicKeyAnnouncement = new Appendix.PublicKeyAnnouncement(Convert.parseHexString(recipientPublicKey));
+            publicKeyAnnouncement = new Appendix.PublicKeyAnnouncement(CryptoComponent.getPublicKeyEncoder().decode(Convert.parseHexString(recipientPublicKey)));
         }
 
         Appendix.Phasing phasing = null;
@@ -191,7 +193,13 @@ abstract class CreateTransaction extends APIServlet.APIRequestHandler {
         JSONObject response = new JSONObject();
 
         // shouldn't try to get publicKey from senderAccount as it may have not been set yet
-        byte[] publicKey = secretPhrase != null ? Crypto.getPublicKey(secretPhrase) : Convert.parseHexString(publicKeyValue);
+        java.security.PublicKey publicKey;
+        if(secretPhrase != null) {
+            KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+            publicKey = keyPair.getPublic();
+        } else {
+            publicKey = CryptoComponent.getPublicKeyEncoder().decode(Convert.parseHexString(publicKeyValue));
+        }
 
         try {
             Transaction.Builder builder = Apl.newTransactionBuilder(publicKey, amountATM, feeATM,

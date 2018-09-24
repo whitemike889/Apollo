@@ -5,7 +5,7 @@
 package com.apollocurrency.aplwallet.apl.http;
 
 import com.apollocurrency.aplwallet.apl.*;
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
+
 import com.apollocurrency.aplwallet.apl.updater.Architecture;
 import com.apollocurrency.aplwallet.apl.updater.DoubleByteArrayTuple;
 import com.apollocurrency.aplwallet.apl.updater.Platform;

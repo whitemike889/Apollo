@@ -21,7 +21,7 @@
 package com.apollocurrency.aplwallet.apl;
 
 import com.apollocurrency.aplwallet.apl.crypto.AnonymouslyEncryptedData;
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
+
 import com.apollocurrency.aplwallet.apl.db.*;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import com.apollocurrency.aplwallet.apl.util.Listener;
@@ -869,7 +869,7 @@ public final class Shuffling {
     }
 
     private static byte[] getParticipantsHash(Iterable<ShufflingParticipant> participants) {
-        MessageDigest digest = Crypto.sha256();
+        MessageDigest digest = CryptoComponent.getDigestCalculator().createDigest();
         participants.forEach(participant -> digest.update(Convert.toBytes(participant.getAccountId())));
         return digest.digest();
     }

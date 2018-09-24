@@ -39,7 +39,7 @@ public interface Block {
 
     long getGeneratorId();
 
-    byte[] getGeneratorPublicKey();
+    java.security.PublicKey getGeneratorPublicKey();
 
     long getPreviousBlockId();
 

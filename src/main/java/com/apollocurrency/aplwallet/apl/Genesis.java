@@ -20,7 +20,7 @@
 
 package com.apollocurrency.aplwallet.apl;
 
-import com.apollocurrency.aplwallet.apl.crypto.Crypto;
+
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -60,7 +60,7 @@ public final class Genesis {
     private static JSONObject genesisAccountsJSON = null;
 
     private static byte[] loadGenesisAccountsJSON() {
-        MessageDigest digest = Crypto.sha256();
+        MessageDigest digest = CryptoComponent.getDigestCalculator().createDigest();
         try (InputStreamReader is = new InputStreamReader(new DigestInputStream(
                 ClassLoader.getSystemResourceAsStream("data/genesisAccounts" + (Constants.isTestnet ? "-testnet.json" : ".json")), digest))) {
             genesisAccountsJSON = (JSONObject) JSONValue.parseWithException(is);
