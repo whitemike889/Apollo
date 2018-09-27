@@ -20,68 +20,13 @@
 
 package com.apollocurrency.aplwallet.apl.crypto.legacy;
 
-import com.apollocurrency.aplwallet.apl.AplException;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.security.PublicKey;
 
-public final class EncryptedData {
-
-    public static final EncryptedData EMPTY_DATA = new EncryptedData(new byte[0], new byte[0]);
-
-    public static EncryptedData encrypt(byte[] plaintext, String secretPhrase, byte[] theirPublicKey) {
-        if (plaintext.length == 0) {
-            return EMPTY_DATA;
-        }
-        byte[] nonce = new byte[32];
-        Crypto.getSecureRandom().nextBytes(nonce);
-        byte[] sharedKey = Crypto.getSharedKey(Crypto.getPrivateKey(secretPhrase), theirPublicKey, nonce);
-        byte[] data = Crypto.aesEncrypt(plaintext, sharedKey);
-        return new EncryptedData(data, nonce);
-    }
-
-    public static EncryptedData readEncryptedData(ByteBuffer buffer, int length, int maxLength)
-            throws AplException.NotValidException {
-        if (length == 0) {
-            return EMPTY_DATA;
-        }
-        if (length > maxLength) {
-            throw new AplException.NotValidException("Max encrypted data length exceeded: " + length);
-        }
-        byte[] data = new byte[length];
-        buffer.get(data);
-        byte[] nonce = new byte[32];
-        buffer.get(nonce);
-        return new EncryptedData(data, nonce);
-    }
-
-    public static EncryptedData readEncryptedData(byte[] bytes) {
-        if (bytes.length == 0) {
-            return EMPTY_DATA;
-        }
-        ByteBuffer buffer = ByteBuffer.wrap(bytes);
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        try {
-            return readEncryptedData(buffer, bytes.length - 32, Integer.MAX_VALUE);
-        } catch (AplException.NotValidException e) {
-            throw new RuntimeException(e.toString(), e); // never
-        }
-    }
-
-    public static int getEncryptedDataLength(byte[] plaintext) {
-        if (plaintext.length == 0) {
-            return 0;
-        }
-        return Crypto.aesEncrypt(plaintext, new byte[32]).length;
-    }
-
-    public static int getEncryptedSize(byte[] plaintext) {
-        if (plaintext.length == 0) {
-            return 0;
-        }
-        return getEncryptedDataLength(plaintext) + 32;
-    }
+public final class EncryptedData implements com.apollocurrency.aplwallet.apl.crypto.symmetric.EncryptedData {
 
     private final byte[] data;
     private final byte[] nonce;
@@ -91,26 +36,36 @@ public final class EncryptedData {
         this.nonce = nonce;
     }
 
-    public byte[] decrypt(String secretPhrase, byte[] theirPublicKey) {
+    @Override
+    public byte[] decrypt(String secretPhrase, PublicKey theirPublicKey) {
         if (data.length == 0) {
             return data;
         }
-        byte[] sharedKey = Crypto.getSharedKey(Crypto.getPrivateKey(secretPhrase), theirPublicKey, nonce);
+        byte[] sharedKey = Crypto.getSharedKey(Crypto.getPrivateKey(secretPhrase), theirPublicKey.getEncoded(), nonce);
         return Crypto.aesDecrypt(data, sharedKey);
     }
 
+    @Override
+    public byte[] decrypt(byte[] symmetricKey) {
+        return Crypto.aesDecrypt(data, symmetricKey);
+    }
+
+    @Override
     public byte[] getData() {
         return data;
     }
 
+    @Override
     public byte[] getNonce() {
         return nonce;
     }
 
-    public int getSize() {
+    @Override
+    public int getBytesSize() {
         return data.length + nonce.length;
     }
 
+    @Override
     public byte[] getBytes() {
         ByteBuffer buffer = ByteBuffer.allocate(nonce.length + data.length);
         buffer.order(ByteOrder.LITTLE_ENDIAN);

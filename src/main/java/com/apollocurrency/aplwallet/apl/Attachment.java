@@ -21,6 +21,7 @@
 package com.apollocurrency.aplwallet.apl;
 
 import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
+import com.apollocurrency.aplwallet.apl.crypto.symmetric.EncryptedData;
 import com.apollocurrency.aplwallet.apl.updater.Architecture;
 import com.apollocurrency.aplwallet.apl.updater.DoubleByteArrayTuple;
 import com.apollocurrency.aplwallet.apl.updater.Platform;
@@ -1641,14 +1642,14 @@ public interface Attachment extends Appendix {
             if (length < 0) {
                 length &= Integer.MAX_VALUE;
             }
-            this.goods = EncryptedData.readEncryptedData(buffer, length, Constants.MAX_DGS_GOODS_LENGTH);
+            this.goods = CryptoComponent.getDataEncryptor().readEncryptedData(buffer, length, Constants.MAX_DGS_GOODS_LENGTH);
             this.discountATM = buffer.getLong();
         }
 
         DigitalGoodsDelivery(JSONObject attachmentData) {
             super(attachmentData);
             this.purchaseId = Convert.parseUnsignedLong((String) attachmentData.get("purchase"));
-            this.goods = new EncryptedData(Convert.parseHexString((String)attachmentData.get("goodsData")),
+            this.goods = CryptoComponent.getDataEncryptor().createEncryptedData(Convert.parseHexString((String)attachmentData.get("goodsData")),
                     Convert.parseHexString((String)attachmentData.get("goodsNonce")));
             this.discountATM = attachmentData.containsKey("discountATM") ? Convert.parseLong(attachmentData.get("discountATM")) : Convert.parseLong(attachmentData.get("discountNQT"));
             this.goodsIsText = Boolean.TRUE.equals(attachmentData.get("goodsIsText"));
@@ -1663,7 +1664,7 @@ public interface Attachment extends Appendix {
 
         @Override
         int getMySize() {
-            return 8 + 4 + goods.getSize() + 8;
+            return 8 + 4 + goods.getBytesSize() + 8;
         }
 
         @Override
@@ -1718,7 +1719,7 @@ public interface Attachment extends Appendix {
     final class UnencryptedDigitalGoodsDelivery extends DigitalGoodsDelivery implements Encryptable {
 
         private final byte[] goodsToEncrypt;
-        private final byte[] recipientPublicKey;
+        private final java.security.PublicKey recipientPublicKey;
 
         UnencryptedDigitalGoodsDelivery(JSONObject attachmentData) {
             super(attachmentData);
@@ -1726,10 +1727,10 @@ public interface Attachment extends Appendix {
             String goodsToEncryptString = (String)attachmentData.get("goodsToEncrypt");
             this.goodsToEncrypt = goodsIsText() ? Convert.toBytes(goodsToEncryptString)
                     : Convert.parseHexString(goodsToEncryptString);
-            this.recipientPublicKey = Convert.parseHexString((String)attachmentData.get("recipientPublicKey"));
+            this.recipientPublicKey = CryptoComponent.getPublicKeyEncoder().decode(Convert.parseHexString((String)attachmentData.get("recipientPublicKey")));
         }
 
-        public UnencryptedDigitalGoodsDelivery(long purchaseId, byte[] goodsToEncrypt, boolean goodsIsText, long discountATM, byte[] recipientPublicKey) {
+        public UnencryptedDigitalGoodsDelivery(long purchaseId, byte[] goodsToEncrypt, boolean goodsIsText, long discountATM, java.security.PublicKey recipientPublicKey) {
             super(purchaseId, null, goodsIsText, discountATM);
             this.goodsToEncrypt = goodsToEncrypt;
             this.recipientPublicKey = recipientPublicKey;
@@ -1738,7 +1739,7 @@ public interface Attachment extends Appendix {
         @Override
         int getMySize() {
             if (getGoods() == null) {
-                return 8 + 4 + EncryptedData.getEncryptedSize(getPlaintext()) + 8;
+                return 8 + 4 + CryptoComponent.getDataEncryptor().getEncryptedBytesSize(getPlaintext()) + 8;
             }
             return super.getMySize();
         }
@@ -1755,7 +1756,7 @@ public interface Attachment extends Appendix {
         void putMyJSON(JSONObject attachment) {
             if (getGoods() == null) {
                 attachment.put("goodsToEncrypt", goodsIsText() ? Convert.toString(goodsToEncrypt) : Convert.toHexString(goodsToEncrypt));
-                attachment.put("recipientPublicKey", Convert.toHexString(recipientPublicKey));
+                attachment.put("recipientPublicKey", Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(recipientPublicKey)));
                 attachment.put("purchase", Long.toUnsignedString(getPurchaseId()));
                 attachment.put("discountNQT", getDiscountATM());
                 attachment.put("goodsIsText", goodsIsText());
@@ -1766,12 +1767,12 @@ public interface Attachment extends Appendix {
 
         @Override
         public void encrypt(String secretPhrase) {
-            setGoods(EncryptedData.encrypt(getPlaintext(), secretPhrase, recipientPublicKey));
+            setGoods(CryptoComponent.getDataEncryptor().encrypt(getPlaintext(), secretPhrase, recipientPublicKey));
         }
 
         @Override
         int getGoodsDataLength() {
-            return EncryptedData.getEncryptedDataLength(getPlaintext());
+            return CryptoComponent.getDataEncryptor().getEncryptedDataLength(getPlaintext());
         }
 
         private byte[] getPlaintext() {

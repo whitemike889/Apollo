@@ -21,6 +21,7 @@
 package com.apollocurrency.aplwallet.apl.http;
 
 import com.apollocurrency.aplwallet.apl.Account;
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
@@ -44,11 +45,11 @@ public final class GetAccountId extends APIServlet.APIRequestHandler {
     @Override
     protected JSONStreamAware processRequest(HttpServletRequest req) throws ParameterException {
 
-        byte[] publicKey = ParameterParser.getPublicKey(req);
+        java.security.PublicKey publicKey = ParameterParser.getPublicKey(req);
         long accountId = Account.getId(publicKey);
         JSONObject response = new JSONObject();
         JSONData.putAccount(response, "account", accountId);
-        response.put("publicKey", Convert.toHexString(publicKey));
+        response.put("publicKey", Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(publicKey)));
 
         return response;
     }

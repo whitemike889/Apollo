@@ -21,6 +21,7 @@
 package com.apollocurrency.aplwallet.apl;
 
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -42,13 +43,13 @@ import static org.slf4j.LoggerFactory.getLogger;
 public final class Genesis {
     private static final Logger LOG = getLogger(Genesis.class);
 
-    private static final byte[] CREATOR_PUBLIC_KEY;
+    private static final java.security.PublicKey CREATOR_PUBLIC_KEY;
     public static final long CREATOR_ID;
     public static final long EPOCH_BEGINNING;
     static {
         try (InputStream is = ClassLoader.getSystemResourceAsStream("data/genesisParameters.json")) {
             JSONObject genesisParameters = (JSONObject)JSONValue.parseWithException(new InputStreamReader(is));
-            CREATOR_PUBLIC_KEY = Convert.parseHexString((String)genesisParameters.get("genesisPublicKey"));
+            CREATOR_PUBLIC_KEY = CryptoComponent.getPublicKeyEncoder().decode(Convert.parseHexString((String)genesisParameters.get("genesisPublicKey")));
             CREATOR_ID = Account.getId(CREATOR_PUBLIC_KEY);
             DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
             EPOCH_BEGINNING = dateFormat.parse((String) genesisParameters.get("epochBeginning")).getTime();
@@ -86,7 +87,7 @@ public final class Genesis {
         LOG.debug(loadingPublicKeysString);
         Apl.getRuntimeMode().updateAppStatus(loadingPublicKeysString + "...");
         for (Object jsonPublicKey : publicKeys) {
-            byte[] publicKey = Convert.parseHexString((String)jsonPublicKey);
+            java.security.PublicKey publicKey = CryptoComponent.getPublicKeyEncoder().decode(Convert.parseHexString((String)jsonPublicKey));
             Account account = Account.addOrGetAccount(Account.getId(publicKey), true);
             account.apply(publicKey, true);
             if (count++ % 100 == 0) {

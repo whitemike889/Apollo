@@ -23,6 +23,8 @@ package com.apollocurrency.aplwallet.apl;
 
 import com.apollocurrency.aplwallet.apl.AccountLedger.LedgerEvent;
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
+import com.apollocurrency.aplwallet.apl.crypto.symmetric.EncryptedData;
 import com.apollocurrency.aplwallet.apl.db.DbClause;
 import com.apollocurrency.aplwallet.apl.db.DbIterator;
 import com.apollocurrency.aplwallet.apl.db.DbKey;
@@ -34,6 +36,8 @@ import com.apollocurrency.aplwallet.apl.util.Listener;
 import com.apollocurrency.aplwallet.apl.util.Listeners;
 import com.apollocurrency.aplwallet.apl.util.Search;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -481,7 +485,7 @@ public final class DigitalGoodsStore {
             protected EncryptedData load(Connection con, ResultSet rs) throws SQLException {
                 byte[] data = rs.getBytes("feedback_data");
                 byte[] nonce = rs.getBytes("feedback_nonce");
-                return new EncryptedData(data, nonce);
+                return CryptoComponent.getDataEncryptor().createEncryptedData(data, nonce);
             }
 
             @Override
@@ -1007,7 +1011,14 @@ public final class DigitalGoodsStore {
         if (data == null) {
             return null;
         }
-        return new EncryptedData(data, rs.getBytes(nonceColumn));
+
+        byte[] nonce = rs.getBytes(nonceColumn);
+        ByteBuffer buffer = ByteBuffer.allocate(nonce.length + data.length);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        buffer.put(data);
+        buffer.put(nonce);
+        return CryptoComponent.getDataEncryptor().readEncryptedData(buffer.array());
+
     }
 
     private static int setEncryptedData(PreparedStatement pstmt, EncryptedData encryptedData, int i) throws SQLException {

@@ -6,6 +6,7 @@ import com.apollocurrency.aplwallet.apl.crypto.asymmetric.PublicKeyEncoder;
 import com.apollocurrency.aplwallet.apl.crypto.asymmetric.SharedKeyCalculator;
 import com.apollocurrency.aplwallet.apl.crypto.asymmetric.signature.Signer;
 import com.apollocurrency.aplwallet.apl.crypto.legacy.KeyGenerator;
+import com.apollocurrency.aplwallet.apl.crypto.symmetric.DataEncryptor;
 
 /**
  * Class to configure crypto-components
@@ -18,6 +19,7 @@ public class CryptoComponent {
     private static final Signer SIGNER = new com.apollocurrency.aplwallet.apl.crypto.legacy.Signer();
     private static final SharedKeyCalculator SHARED_KEY_CALCULATOR = new com.apollocurrency.aplwallet.apl.crypto.legacy.SharedKeyCalculator();
     private static final DigestCalculator DIGEST_CALCULATOR = new com.apollocurrency.aplwallet.apl.crypto.legacy.DigestCalculator();
+    private static final DataEncryptor DATA_ENCRYPTOR = new com.apollocurrency.aplwallet.apl.crypto.legacy.DataEncryptor();
 
     public static PublicKeyEncoder getPublicKeyEncoder() {
         return PUBLIC_KEY_ENCODER_INSTANCE;
@@ -37,6 +39,10 @@ public class CryptoComponent {
 
     public static DigestCalculator getDigestCalculator() {
         return DIGEST_CALCULATOR;
+    }
+
+    public static DataEncryptor getDataEncryptor() {
+        return DATA_ENCRYPTOR;
     }
 
 }

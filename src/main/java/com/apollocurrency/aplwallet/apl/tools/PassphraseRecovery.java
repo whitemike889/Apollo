@@ -253,7 +253,7 @@ public final class PassphraseRecovery {
             return "Solution{" +
                     "passphrase=" + passphrase +
                     ", passphraseChars=" + Arrays.toString(passphraseChars) +
-                    ", publicKey=" + (publicKey != null ? Convert.toHexString(publicKey) : "not registered on blockchain") +
+                    ", publicKey=" + (publicKey != null ? Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(publicKey)) : "not registered on blockchain") +
                     ", accountId=" + accountId +
                     ", rsAccount=" + rsAccount +
                     '}';

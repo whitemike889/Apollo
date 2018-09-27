@@ -21,6 +21,7 @@
 package com.apollocurrency.aplwallet.apl;
 
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.db.DbIterator;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import com.apollocurrency.aplwallet.apl.util.Filter;
@@ -30,6 +31,7 @@ import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 
+import java.security.KeyPair;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
@@ -106,7 +108,7 @@ public final class FundingMonitor {
     private final String secretPhrase;
 
     /** Fund account public key */
-    private final byte[] publicKey;
+    private final java.security.PublicKey publicKey;
 
     /**
      * Create a monitor
@@ -132,10 +134,11 @@ public final class FundingMonitor {
         this.accountId = accountId;
         this.accountName = Convert.rsAccount(accountId);
         this.secretPhrase = secretPhrase;
-        this.publicKey = Crypto.getPublicKey(secretPhrase);
+        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+        this.publicKey = keyPair.getPublic();
     }
 
-    private FundingMonitor(HoldingType holdingType, long holdingId, String property, long amount, long threshold, int interval, long accountId, String accountName, String secretPhrase, byte[] publicKey) {
+    private FundingMonitor(HoldingType holdingType, long holdingId, String property, long amount, long threshold, int interval, long accountId, String accountName, String secretPhrase, java.security.PublicKey publicKey) {
         this.holdingType = holdingType;
         this.holdingId = holdingId;
         this.property = property;
@@ -243,7 +246,8 @@ public final class FundingMonitor {
         // won't be used.
         //
         init();
-        long accountId = Account.getId(Crypto.getPublicKey(secretPhrase));
+        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+        long accountId = Account.getId(keyPair.getPublic());
         //
         // Create the monitor
         //

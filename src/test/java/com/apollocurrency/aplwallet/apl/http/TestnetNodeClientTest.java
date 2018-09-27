@@ -254,7 +254,7 @@ public class TestnetNodeClientTest extends AbstractNodeClientTest {
     public void testGetEncryptedPrivateBlockTransactions() throws Exception {
         String secretPhrase = accounts.get(PRIVATE_TRANSACTION_SENDER);
         byte[] publicKey = Crypto.getPublicKey(secretPhrase);
-        List<JSONTransaction> transactionsList = client.getEncryptedPrivateBlockchainTransactionsList(url, PRIVATE_BLOCK_HEIGHT, null, null, secretPhrase, Convert.toHexString(publicKey));
+        List<JSONTransaction> transactionsList = client.getEncryptedPrivateBlockchainTransactionsList(url, PRIVATE_BLOCK_HEIGHT, null, null, secretPhrase, Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(publicKey)));
         checkList(transactionsList);
         Assert.assertEquals(4, transactionsList.size());
         transactionsList.forEach(transaction -> {
@@ -278,20 +278,20 @@ public class TestnetNodeClientTest extends AbstractNodeClientTest {
         String secretPhrase = accounts.get(PRIVATE_TRANSACTION_SENDER);
         byte[] publicKey = Crypto.getPublicKey(secretPhrase);
         List<JSONTransaction> transactionsList1 = client.getEncryptedPrivateBlockchainTransactionsList(url, -1, 5L, 9L, secretPhrase,
-                Convert.toHexString(publicKey));
+                Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(publicKey)));
         checkList(transactionsList1);
         Assert.assertEquals(5, transactionsList1.size());
         checkAddress(transactionsList1, PRIVATE_TRANSACTION_SENDER);
 
         List<JSONTransaction> transactionsList2 = client.getEncryptedPrivateBlockchainTransactionsList(url, -1, null, 10L, secretPhrase,
-                Convert.toHexString(publicKey));
+                Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(publicKey)));
         checkList(transactionsList2);
         Assert.assertEquals(11, transactionsList2.size());
         Assert.assertTrue(transactionsList2.containsAll(transactionsList1));
         checkAddress(transactionsList2, PRIVATE_TRANSACTION_SENDER);
 
         List<JSONTransaction> transactionsList3 = client.getEncryptedPrivateBlockchainTransactionsList(url, -1, 5L, null, secretPhrase,
-                Convert.toHexString(publicKey));
+                Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(publicKey)));
         checkList(transactionsList3);
         Assert.assertTrue(transactionsList3.size() > 5);
         Assert.assertTrue(transactionsList3.containsAll(transactionsList1));

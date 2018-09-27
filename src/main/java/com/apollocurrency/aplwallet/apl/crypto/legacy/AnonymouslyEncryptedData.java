@@ -103,7 +103,7 @@ public final class AnonymouslyEncryptedData {
 
     @Override
     public String toString() {
-        return "data: " + Convert.toHexString(data) + " publicKey: " + Convert.toHexString(publicKey);
+        return "data: " + Convert.toHexString(data) + " publicKey: " + Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(publicKey));
     }
 
 }

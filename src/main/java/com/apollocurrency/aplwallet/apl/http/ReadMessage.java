@@ -23,12 +23,15 @@ package com.apollocurrency.aplwallet.apl.http;
 import com.apollocurrency.aplwallet.apl.*;
 
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
+import com.apollocurrency.aplwallet.apl.crypto.symmetric.EncryptedData;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 import org.slf4j.Logger;
 
 import javax.servlet.http.HttpServletRequest;
+import java.security.KeyPair;
 import java.util.Arrays;
 
 import static com.apollocurrency.aplwallet.apl.http.JSONResponses.*;
@@ -104,15 +107,16 @@ public final class ReadMessage extends APIServlet.APIRequestHandler {
                 try {
                     byte[] decrypted = null;
                     if (secretPhrase != null) {
-                        byte[] readerPublicKey = Crypto.getPublicKey(secretPhrase);
-                        byte[] senderPublicKey = Account.getPublicKey(transaction.getSenderId());
-                        byte[] recipientPublicKey = Account.getPublicKey(transaction.getRecipientId());
-                        byte[] publicKey = Arrays.equals(senderPublicKey, readerPublicKey) ? recipientPublicKey : senderPublicKey;
+                        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+                        java.security.PublicKey readerPublicKey = keyPair.getPublic();
+                        java.security.PublicKey senderPublicKey = Account.getPublicKey(transaction.getSenderId());
+                        java.security.PublicKey recipientPublicKey = Account.getPublicKey(transaction.getRecipientId());
+                        java.security.PublicKey publicKey = senderPublicKey.equals(readerPublicKey) ? recipientPublicKey : senderPublicKey;
                         if (publicKey != null) {
                             decrypted = Account.decryptFrom(publicKey, encryptedData, secretPhrase, uncompress);
                         }
                     } else {
-                        decrypted = Crypto.aesDecrypt(encryptedData.getData(), sharedKey);
+                        decrypted = encryptedData.decrypt(sharedKey);
                         if (uncompress) {
                             decrypted = Convert.uncompress(decrypted);
                         }
@@ -124,9 +128,9 @@ public final class ReadMessage extends APIServlet.APIRequestHandler {
                 }
             }
             if (encryptToSelfMessage != null && secretPhrase != null) {
-                byte[] publicKey = Crypto.getPublicKey(secretPhrase);
+                KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
                 try {
-                    byte[] decrypted = Account.decryptFrom(publicKey, encryptToSelfMessage.getEncryptedData(), secretPhrase, encryptToSelfMessage.isCompressed());
+                    byte[] decrypted = Account.decryptFrom(keyPair.getPublic(), encryptToSelfMessage.getEncryptedData(), secretPhrase, encryptToSelfMessage.isCompressed());
                     response.put("decryptedMessageToSelf", Convert.toString(decrypted, encryptToSelfMessage.isText()));
                 } catch (RuntimeException e) {
                     LOG.debug("Decryption of message to self failed: " + e.toString());

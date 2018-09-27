@@ -23,12 +23,14 @@ package com.apollocurrency.aplwallet.apl.peer;
 import com.apollocurrency.aplwallet.apl.Account;
 import com.apollocurrency.aplwallet.apl.Constants;
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.security.KeyPair;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class Hallmark {
@@ -55,12 +57,19 @@ public final class Hallmark {
             throw new IllegalArgumentException("Weight should be between 1 and " + Constants.MAX_BALANCE_APL);
         }
 
-        byte[] publicKey = Crypto.getPublicKey(secretPhrase);
+        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+        java.security.PublicKey publicKey = keyPair.getPublic();
         byte[] hostBytes = Convert.toBytes(host);
 
-        ByteBuffer buffer = ByteBuffer.allocate(32 + 2 + hostBytes.length + 4 + 4 + 1);
+        ByteBuffer buffer = ByteBuffer.allocate(
+                CryptoComponent.getPublicKeyEncoder().getEncodedLength() +
+                2 /* hostBytes.length */+
+                hostBytes.length /* hostBytes */ +
+                4 /* weight */ +
+                4 /* date */+
+                1 /* TODO What is this value */);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
-        buffer.put(publicKey);
+        buffer.put(CryptoComponent.getPublicKeyEncoder().encode(publicKey));
         buffer.putShort((short)hostBytes.length);
         buffer.put(hostBytes);
         buffer.putInt(weight);
@@ -68,7 +77,8 @@ public final class Hallmark {
 
         byte[] data = buffer.array();
         data[data.length - 1] = (byte) ThreadLocalRandom.current().nextInt();
-        byte[] signature = Crypto.sign(data, secretPhrase);
+
+        byte[] signature = CryptoComponent.getSigner().sign(data, keyPair.getPrivate());
 
         return Convert.toHexString(data) + Convert.toHexString(signature);
 
@@ -86,8 +96,9 @@ public final class Hallmark {
         ByteBuffer buffer = ByteBuffer.wrap(hallmarkBytes);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
 
-        byte[] publicKey = new byte[32];
-        buffer.get(publicKey);
+        byte[] publicKeyBytes = new byte[CryptoComponent.getPublicKeyEncoder().getEncodedLength()];
+        buffer.get(publicKeyBytes);
+        java.security.PublicKey publicKey = CryptoComponent.getPublicKeyEncoder().decode(publicKeyBytes);
         int hostLength = buffer.getShort();
         if (hostLength > 300) {
             throw new IllegalArgumentException("Invalid host length");
@@ -98,14 +109,14 @@ public final class Hallmark {
         int weight = buffer.getInt();
         int date = buffer.getInt();
         buffer.get();
-        byte[] signature = new byte[64];
+        byte[] signature = new byte[CryptoComponent.getSigner().getSignatureLength()];
         buffer.get(signature);
 
-        byte[] data = new byte[hallmarkBytes.length - 64];
+        byte[] data = new byte[hallmarkBytes.length - CryptoComponent.getSigner().getSignatureLength()];
         System.arraycopy(hallmarkBytes, 0, data, 0, data.length);
 
         boolean isValid = host.length() < 100 && weight > 0 && weight <= Constants.MAX_BALANCE_APL
-                && Crypto.verify(signature, data, publicKey);
+                && CryptoComponent.getSigner().verify(data, signature, publicKey);
         try {
             return new Hallmark(hallmarkString, publicKey, signature, host, weight, date, isValid);
         } catch (URISyntaxException e) {
@@ -119,12 +130,12 @@ public final class Hallmark {
     private final int port;
     private final int weight;
     private final int date;
-    private final byte[] publicKey;
+    private final java.security.PublicKey publicKey;
     private final long accountId;
     private final byte[] signature;
     private final boolean isValid;
 
-    private Hallmark(String hallmarkString, byte[] publicKey, byte[] signature, String host, int weight, int date, boolean isValid)
+    private Hallmark(String hallmarkString, java.security.PublicKey publicKey, byte[] signature, String host, int weight, int date, boolean isValid)
             throws URISyntaxException {
         this.hallmarkString = hallmarkString;
         URI uri = new URI("http://" + host);
@@ -139,7 +150,7 @@ public final class Hallmark {
     }
 
     //valid
-    private Hallmark(String hallmarkString, byte[] publicKey, byte[] signature, String host, int weight, int date) throws URISyntaxException {
+    private Hallmark(String hallmarkString, java.security.PublicKey publicKey, byte[] signature, String host, int weight, int date) throws URISyntaxException {
         this(hallmarkString, publicKey, signature, host, weight, date, true);
     }
 
@@ -167,7 +178,7 @@ public final class Hallmark {
         return signature;
     }
 
-    public byte[] getPublicKey() {
+    public java.security.PublicKey getPublicKey() {
         return publicKey;
     }
 

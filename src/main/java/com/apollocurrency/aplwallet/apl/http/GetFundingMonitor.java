@@ -24,12 +24,14 @@ import com.apollocurrency.aplwallet.apl.Account;
 import com.apollocurrency.aplwallet.apl.FundingMonitor;
 import com.apollocurrency.aplwallet.apl.HoldingType;
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.util.Filter;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 
 import javax.servlet.http.HttpServletRequest;
+import java.security.KeyPair;
 import java.util.List;
 
 /**
@@ -80,12 +82,13 @@ public class GetFundingMonitor extends APIServlet.APIRequestHandler {
         List<FundingMonitor> monitors;
         if (secretPhrase != null || account != 0) {
             if (secretPhrase != null) {
+                KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
                 if (account != 0) {
-                    if (Account.getId(Crypto.getPublicKey(secretPhrase)) != account) {
+                    if (Account.getId(keyPair.getPublic()) != account) {
                         return JSONResponses.INCORRECT_ACCOUNT;
                     }
                 } else {
-                    account = Account.getId(Crypto.getPublicKey(secretPhrase));
+                    account = Account.getId(keyPair.getPublic());
                 }
             }
             final long accountId = account;

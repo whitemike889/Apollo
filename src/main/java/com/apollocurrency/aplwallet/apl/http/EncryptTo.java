@@ -23,6 +23,7 @@ package com.apollocurrency.aplwallet.apl.http;
 import com.apollocurrency.aplwallet.apl.Account;
 import com.apollocurrency.aplwallet.apl.AplException;
 
+import com.apollocurrency.aplwallet.apl.crypto.symmetric.EncryptedData;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.json.simple.JSONStreamAware;
 
@@ -50,7 +51,7 @@ public final class EncryptTo extends APIServlet.APIRequestHandler {
     protected JSONStreamAware processRequest(HttpServletRequest req) throws AplException {
 
         long recipientId = ParameterParser.getAccountId(req, "recipient", true);
-        byte[] recipientPublicKey = Account.getPublicKey(recipientId);
+        java.security.PublicKey recipientPublicKey = Account.getPublicKey(recipientId);
         if (recipientPublicKey == null) {
             return INCORRECT_RECIPIENT;
         }

@@ -61,6 +61,6 @@ public class GeneratePublicKey {
 
     private static void printPublicKey(String secretPhrase) {
         byte[] publicKey = Crypto.getPublicKey(secretPhrase);
-        System.out.println(Convert.toHexString(publicKey));
+        System.out.println(Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(publicKey)));
     }
 }

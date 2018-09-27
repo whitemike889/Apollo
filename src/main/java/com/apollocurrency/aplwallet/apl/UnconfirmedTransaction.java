@@ -126,7 +126,7 @@ class UnconfirmedTransaction implements Transaction {
     }
 
     @Override
-    public byte[] getSenderPublicKey() {
+    public java.security.PublicKey getSenderPublicKey() {
         return transaction.getSenderPublicKey();
     }
 

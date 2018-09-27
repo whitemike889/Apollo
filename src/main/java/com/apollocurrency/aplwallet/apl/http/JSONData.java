@@ -25,6 +25,8 @@ import com.apollocurrency.aplwallet.apl.AccountLedger.LedgerEntry;
 import com.apollocurrency.aplwallet.apl.Currency;
 
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
+import com.apollocurrency.aplwallet.apl.crypto.symmetric.EncryptedData;
 import com.apollocurrency.aplwallet.apl.db.DbIterator;
 import com.apollocurrency.aplwallet.apl.db.DbUtils;
 import com.apollocurrency.aplwallet.apl.peer.Hallmark;
@@ -959,7 +961,7 @@ public final class JSONData {
         json.put("phased", transaction.getPhasing() != null);
         json.put("timestamp", transaction.getTimestamp());
         json.put("deadline", transaction.getDeadline());
-        json.put("senderPublicKey", Convert.toHexString(transaction.getSenderPublicKey()));
+        json.put("senderPublicKey", Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(transaction.getSenderPublicKey())));
         if (transaction.getRecipientId() != 0) {
             if (transaction.getType().equals(TransactionType.Payment.PRIVATE) && isPrivate) {
                 putPrivateAccount(json, "recipient", transaction.getRecipientId());

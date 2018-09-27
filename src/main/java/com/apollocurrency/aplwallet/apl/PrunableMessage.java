@@ -22,12 +22,15 @@ package com.apollocurrency.aplwallet.apl;
 
 
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
+import com.apollocurrency.aplwallet.apl.crypto.symmetric.EncryptedData;
 import com.apollocurrency.aplwallet.apl.db.DbIterator;
 import com.apollocurrency.aplwallet.apl.db.DbKey;
 import com.apollocurrency.aplwallet.apl.db.DbUtils;
 import com.apollocurrency.aplwallet.apl.db.PrunableDbTable;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 
+import java.security.KeyPair;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -162,7 +165,7 @@ public final class PrunableMessage {
         }
         byte[] encryptedMessage = rs.getBytes("encrypted_message");
         if (encryptedMessage != null) {
-            this.encryptedData = EncryptedData.readEncryptedData(encryptedMessage);
+            this.encryptedData = CryptoComponent.getDataEncryptor().readEncryptedData(encryptedMessage);
             this.encryptedMessageIsText = rs.getBoolean("encrypted_is_text");
             this.isCompressed = rs.getBoolean("is_compressed");
         }
@@ -253,7 +256,8 @@ public final class PrunableMessage {
         if (encryptedData == null) {
             return null;
         }
-        byte[] publicKey = senderId == Account.getId(Crypto.getPublicKey(secretPhrase))
+        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+        java.security.PublicKey publicKey = senderId == Account.getId(keyPair.getPublic())
                 ? Account.getPublicKey(recipientId) : Account.getPublicKey(senderId);
         return Account.decryptFrom(publicKey, encryptedData, secretPhrase, isCompressed);
     }
@@ -262,7 +266,8 @@ public final class PrunableMessage {
         if (encryptedData == null) {
             return null;
         }
-        byte[] data = Crypto.aesDecrypt(encryptedData.getData(), sharedKey);
+
+        byte[] data = encryptedData.decrypt(sharedKey);
         if (isCompressed) {
             data = Convert.uncompress(data);
         }

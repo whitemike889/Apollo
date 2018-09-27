@@ -25,12 +25,14 @@ import com.apollocurrency.aplwallet.apl.AccountLedger.LedgerEvent;
 import com.apollocurrency.aplwallet.apl.AccountLedger.LedgerHolding;
 import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.crypto.legacy.Crypto;
+import com.apollocurrency.aplwallet.apl.crypto.symmetric.EncryptedData;
 import com.apollocurrency.aplwallet.apl.db.*;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import com.apollocurrency.aplwallet.apl.util.Listener;
 import com.apollocurrency.aplwallet.apl.util.Listeners;
 import org.slf4j.Logger;
 
+import java.security.KeyPair;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -793,14 +795,14 @@ public final class Account {
 
     static void init() {}
 
-    public static EncryptedData encryptTo(byte[] publicKey, byte[] data, String senderSecretPhrase, boolean compress) {
+    public static EncryptedData encryptTo(java.security.PublicKey publicKey, byte[] data, String senderSecretPhrase, boolean compress) {
         if (compress && data.length > 0) {
             data = Convert.compress(data);
         }
-        return EncryptedData.encrypt(data, senderSecretPhrase, publicKey);
+        return CryptoComponent.getDataEncryptor().encrypt(data, senderSecretPhrase, publicKey);
     }
 
-    public static byte[] decryptFrom(byte[] publicKey, EncryptedData encryptedData, String recipientSecretPhrase, boolean uncompress) {
+    public static byte[] decryptFrom(java.security.PublicKey publicKey, EncryptedData encryptedData, String recipientSecretPhrase, boolean uncompress) {
         byte[] decrypted = encryptedData.decrypt(recipientSecretPhrase, publicKey);
         if (uncompress && decrypted.length > 0) {
             decrypted = Convert.uncompress(decrypted);
@@ -888,7 +890,7 @@ public final class Account {
     }
 
     public EncryptedData encryptTo(byte[] data, String senderSecretPhrase, boolean compress) {
-        byte[] key = getPublicKey(this.id);
+        java.security.PublicKey key = getPublicKey(this.id);
         if (key == null) {
             throw new IllegalArgumentException("Recipient account doesn't have a public key set");
         }
@@ -896,7 +898,7 @@ public final class Account {
     }
 
     public byte[] decryptFrom(EncryptedData encryptedData, String recipientSecretPhrase, boolean uncompress) {
-        byte[] key = getPublicKey(this.id);
+        java.security.PublicKey key = getPublicKey(this.id);
         if (key == null) {
             throw new IllegalArgumentException("Sender account doesn't have a public key set");
         }

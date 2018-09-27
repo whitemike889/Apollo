@@ -47,7 +47,7 @@ public final class StartShuffler extends APIServlet.APIRequestHandler {
     protected JSONStreamAware processRequest(HttpServletRequest req) throws AplException {
         byte[] shufflingFullHash = ParameterParser.getBytes(req, "shufflingFullHash", true);
         String secretPhrase = ParameterParser.getSecretPhrase(req, true);
-        byte[] recipientPublicKey = ParameterParser.getPublicKey(req, "recipient");
+        java.security.PublicKey recipientPublicKey = ParameterParser.getPublicKey(req, "recipient");
         try {
             Shuffler shuffler = Shuffler.addOrGetShuffler(secretPhrase, recipientPublicKey, shufflingFullHash);
             return shuffler != null ? JSONData.shuffler(shuffler, false) : JSON.emptyJSON;

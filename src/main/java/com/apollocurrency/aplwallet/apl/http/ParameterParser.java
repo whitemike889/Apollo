@@ -23,6 +23,8 @@ package com.apollocurrency.aplwallet.apl.http;
 import com.apollocurrency.aplwallet.apl.*;
 
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
+import com.apollocurrency.aplwallet.apl.crypto.symmetric.EncryptedData;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import com.apollocurrency.aplwallet.apl.util.Search;
 import org.json.simple.JSONObject;
@@ -36,6 +38,7 @@ import javax.servlet.http.Part;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -355,7 +358,7 @@ public final class ParameterParser {
                 throw new ParameterException(JSONResponses.incorrect(messageType + "File"));
             }
         }
-        return new EncryptedData(data, nonce);
+        return CryptoComponent.getDataEncryptor().createEncryptedData(data, nonce);
     }
 
     public static Appendix.EncryptToSelfMessage getEncryptToSelfMessage(HttpServletRequest req) throws ParameterException {
@@ -375,8 +378,8 @@ public final class ParameterParser {
             }
             String secretPhrase = getSecretPhrase(req, false);
             if (secretPhrase != null) {
-                byte[] publicKey = Crypto.getPublicKey(secretPhrase);
-                encryptedData = Account.encryptTo(publicKey, plainMessageBytes, secretPhrase, compress);
+                KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+                encryptedData = Account.encryptTo(keyPair.getPublic(), plainMessageBytes, secretPhrase, compress);
             }
         }
         if (encryptedData != null) {
@@ -402,34 +405,32 @@ public final class ParameterParser {
         return secretPhrase;
     }
 
-    public static byte[] getPublicKey(HttpServletRequest req) throws ParameterException {
+    public static java.security.PublicKey getPublicKey(HttpServletRequest req) throws ParameterException {
         return getPublicKey(req, null);
     }
 
-    public static byte[] getPublicKey(HttpServletRequest req, String prefix) throws ParameterException {
+    public static java.security.PublicKey getPublicKey(HttpServletRequest req, String prefix) throws ParameterException {
         String secretPhraseParam = prefix == null ? "secretPhrase" : (prefix + "SecretPhrase");
         String publicKeyParam = prefix == null ? "publicKey" : (prefix + "PublicKey");
         String secretPhrase = Convert.emptyToNull(req.getParameter(secretPhraseParam));
         if (secretPhrase == null) {
             try {
-                byte[] publicKey = Convert.parseHexString(Convert.emptyToNull(req.getParameter(publicKeyParam)));
+                java.security.PublicKey publicKey = CryptoComponent.getPublicKeyEncoder().decode(Convert.parseHexString(Convert.emptyToNull(req.getParameter(publicKeyParam))));
                 if (publicKey == null) {
                     throw new ParameterException(missing(secretPhraseParam, publicKeyParam));
-                }
-                if (!Crypto.isCanonicalPublicKey(publicKey)) {
-                    throw new ParameterException(incorrect(publicKeyParam));
                 }
                 return publicKey;
             } catch (RuntimeException e) {
                 throw new ParameterException(incorrect(publicKeyParam));
             }
         } else {
-            return Crypto.getPublicKey(secretPhrase);
+            KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+            return keyPair.getPublic();
         }
     }
 
     public static Account getSenderAccount(HttpServletRequest req) throws ParameterException {
-        byte[] publicKey = getPublicKey(req);
+        java.security.PublicKey publicKey = getPublicKey(req);
         Account account = Account.getAccount(publicKey);
         if (account == null) {
             throw new ParameterException(UNKNOWN_ACCOUNT);
@@ -643,7 +644,7 @@ public final class ParameterParser {
         boolean isText = !"false".equalsIgnoreCase(req.getParameter("messageToEncryptIsText"));
         boolean compress = !"false".equalsIgnoreCase(req.getParameter("compressMessageToEncrypt"));
         byte[] plainMessageBytes = null;
-        byte[] recipientPublicKey = null;
+        java.security.PublicKey recipientPublicKey = null;
         EncryptedData encryptedData = ParameterParser.getEncryptedData(req, "encryptedMessage");
         if (encryptedData == null) {
             String plainMessage = Convert.emptyToNull(req.getParameter("messageToEncrypt"));
@@ -680,7 +681,7 @@ public final class ParameterParser {
                 recipientPublicKey = Account.getPublicKey(recipient.getId());
             }
             if (recipientPublicKey == null) {
-                recipientPublicKey = Convert.parseHexString(Convert.emptyToNull(req.getParameter("recipientPublicKey")));
+                recipientPublicKey = CryptoComponent.getPublicKeyEncoder().decode(Convert.parseHexString(Convert.emptyToNull(req.getParameter("recipientPublicKey"))));
             }
             if (recipientPublicKey == null) {
                 throw new ParameterException(MISSING_RECIPIENT_PUBLIC_KEY);

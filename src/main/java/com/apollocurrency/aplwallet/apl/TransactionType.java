@@ -2845,7 +2845,7 @@ public abstract class TransactionType {
                 if (attachment.getPeriod() < Constants.LEASING_DELAY || attachment.getPeriod() > 65535) {
                     throw new AplException.NotValidException("Invalid effective balance leasing period: " + attachment.getPeriod());
                 }
-                byte[] recipientPublicKey = Account.getPublicKey(transaction.getRecipientId());
+                java.security.PublicKey recipientPublicKey = Account.getPublicKey(transaction.getRecipientId());
                 if (recipientPublicKey == null) {
                     throw new AplException.NotCurrentlyValidException("Invalid effective balance leasing: "
                             + " recipient account " + Long.toUnsignedString(transaction.getRecipientId()) + " not found or no public key published");

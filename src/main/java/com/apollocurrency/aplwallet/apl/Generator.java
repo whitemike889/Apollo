@@ -21,6 +21,7 @@
 package com.apollocurrency.aplwallet.apl;
 
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import com.apollocurrency.aplwallet.apl.util.Listener;
 import com.apollocurrency.aplwallet.apl.util.Listeners;
@@ -28,6 +29,7 @@ import com.apollocurrency.aplwallet.apl.util.ThreadPool;
 import org.slf4j.Logger;
 
 import java.math.BigInteger;
+import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,7 +47,7 @@ public final class Generator implements Comparable<Generator> {
     }
 
     private static final int MAX_FORGERS = Apl.getIntProperty("apl.maxNumberOfForgers");
-    private static final byte[] fakeForgingPublicKey = Apl.getBooleanProperty("apl.enableFakeForging") ?
+    private static final java.security.PublicKey fakeForgingPublicKey = Apl.getBooleanProperty("apl.enableFakeForging") ?
             Account.getPublicKey(Convert.parseAccountId(Apl.getStringProperty("apl.fakeForgingAccount"))) : null;
     private static volatile boolean suspendForging = false;
     private static final Listeners<Generator,Event> listeners = new Listeners<>();
@@ -250,16 +252,16 @@ public final class Generator implements Comparable<Generator> {
     }
 
     static boolean allowsFakeForging(java.security.PublicKey publicKey) {
-        return Constants.isTestnet && publicKey != null && Arrays.equals(publicKey, fakeForgingPublicKey);
+        return Constants.isTestnet && publicKey != null && publicKey.equals(fakeForgingPublicKey);
     }
 
-    static BigInteger getHit(byte[] publicKey, Block block) {
+    static BigInteger getHit(java.security.PublicKey publicKey, Block block) {
         if (allowsFakeForging(publicKey)) {
             return BigInteger.ZERO;
         }
         MessageDigest digest = CryptoComponent.getDigestCalculator().createDigest();
         digest.update(block.getGenerationSignature());
-        byte[] generationSignatureHash = digest.digest(publicKey);
+        byte[] generationSignatureHash = digest.digest(CryptoComponent.getPublicKeyEncoder().encode(publicKey));
         return new BigInteger(1, new byte[] {generationSignatureHash[7], generationSignatureHash[6], generationSignatureHash[5], generationSignatureHash[4], generationSignatureHash[3], generationSignatureHash[2], generationSignatureHash[1], generationSignatureHash[0]});
     }
 
@@ -271,21 +273,24 @@ public final class Generator implements Comparable<Generator> {
 
     private final long accountId;
     private final String secretPhrase;
-    private final byte[] publicKey;
+    private final java.security.PublicKey publicKey;
     private volatile long hitTime;
     private volatile BigInteger hit;
     private volatile BigInteger effectiveBalance;
     private volatile long deadline;
 
-    private Generator(long accountId, String secretPhrase, byte[] publicKey) {
+    private Generator(long accountId, String secretPhrase, java.security.PublicKey publicKey) {
         this.accountId = accountId;
         this.secretPhrase = secretPhrase;
         this.publicKey = publicKey;
     }
 
     private Generator(String secretPhrase) {
+
+        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+
         this.secretPhrase = secretPhrase;
-        this.publicKey = Crypto.getPublicKey(secretPhrase);
+        this.publicKey = keyPair.getPublic();
         this.accountId = Account.getId(publicKey);
         Apl.getBlockchain().updateLock();
         try {
@@ -298,7 +303,7 @@ public final class Generator implements Comparable<Generator> {
         }
     }
 
-    public byte[] getPublicKey() {
+    public java.security.PublicKey getPublicKey() {
         return publicKey;
     }
 
@@ -439,7 +444,7 @@ public final class Generator implements Comparable<Generator> {
         private final long accountId;
         private long hitTime;
         private long effectiveBalanceAPL;
-        private byte[] publicKey;
+        private java.security.PublicKey publicKey;
 
         public ActiveGenerator(long accountId) {
             this.accountId = accountId;

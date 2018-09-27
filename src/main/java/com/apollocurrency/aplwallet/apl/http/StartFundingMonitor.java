@@ -27,10 +27,13 @@ import com.apollocurrency.aplwallet.apl.FundingMonitor;
 import com.apollocurrency.aplwallet.apl.HoldingType;
 import com.apollocurrency.aplwallet.apl.AplException;
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 
 import javax.servlet.http.HttpServletRequest;
+
+import java.security.KeyPair;
 
 import static com.apollocurrency.aplwallet.apl.http.JSONResponses.MONITOR_ALREADY_STARTED;
 import static com.apollocurrency.aplwallet.apl.http.JSONResponses.UNKNOWN_ACCOUNT;
@@ -113,7 +116,8 @@ public final class StartFundingMonitor extends APIServlet.APIRequestHandler {
                 }
                 break;
         }
-        Account account = Account.getAccount(Crypto.getPublicKey(secretPhrase));
+        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+        Account account = Account.getAccount(keyPair.getPublic());
         if (account == null) {
             throw new ParameterException(UNKNOWN_ACCOUNT);
         }

@@ -24,6 +24,7 @@ import com.apollocurrency.aplwallet.apl.AccountLedger.LedgerEvent;
 
 
 import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
+import com.apollocurrency.aplwallet.apl.crypto.symmetric.EncryptedData;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -496,7 +497,7 @@ public interface Appendix {
             if (length < 0) {
                 length &= Integer.MAX_VALUE;
             }
-            this.encryptedData = EncryptedData.readEncryptedData(buffer, length, 1000);
+            this.encryptedData = CryptoComponent.getDataEncryptor().readEncryptedData(buffer, length, 1000);
             this.isCompressed = getVersion() != 2;
         }
 
@@ -504,7 +505,7 @@ public interface Appendix {
             super(attachmentJSON);
             byte[] data = Convert.parseHexString((String)encryptedMessageJSON.get("data"));
             byte[] nonce = Convert.parseHexString((String) encryptedMessageJSON.get("nonce"));
-            this.encryptedData = new EncryptedData(data, nonce);
+            this.encryptedData = CryptoComponent.getDataEncryptor().createEncryptedData(data, nonce);
             this.isText = Boolean.TRUE.equals(encryptedMessageJSON.get("isText"));
             Object isCompressed = encryptedMessageJSON.get("isCompressed");
             this.isCompressed = isCompressed == null || Boolean.TRUE.equals(isCompressed);
@@ -519,7 +520,7 @@ public interface Appendix {
 
         @Override
         int getMySize() {
-            return 4 + encryptedData.getSize();
+            return 4 + encryptedData.getBytesSize();
         }
 
         @Override
@@ -643,7 +644,7 @@ public interface Appendix {
                 this.hash = null;
                 byte[] data = Convert.parseHexString((String) encryptedMessageJSON.get("data"));
                 byte[] nonce = Convert.parseHexString((String) encryptedMessageJSON.get("nonce"));
-                this.encryptedData = new EncryptedData(data, nonce);
+                this.encryptedData = CryptoComponent.getDataEncryptor().createEncryptedData(data, nonce);
                 this.isText = Boolean.TRUE.equals(encryptedMessageJSON.get("isText"));
                 this.isCompressed = Boolean.TRUE.equals(encryptedMessageJSON.get("isCompressed"));
             }
@@ -803,7 +804,7 @@ public interface Appendix {
     final class UnencryptedPrunableEncryptedMessage extends PrunableEncryptedMessage implements Encryptable {
 
         private final byte[] messageToEncrypt;
-        private final byte[] recipientPublicKey;
+        private final java.security.PublicKey recipientPublicKey;
 
         private UnencryptedPrunableEncryptedMessage(JSONObject attachmentJSON) {
             super(attachmentJSON);
@@ -811,10 +812,10 @@ public interface Appendix {
             JSONObject encryptedMessageJSON = (JSONObject)attachmentJSON.get("encryptedMessage");
             String messageToEncryptString = (String)encryptedMessageJSON.get("messageToEncrypt");
             this.messageToEncrypt = isText() ? Convert.toBytes(messageToEncryptString) : Convert.parseHexString(messageToEncryptString);
-            this.recipientPublicKey = Convert.parseHexString((String)attachmentJSON.get("recipientPublicKey"));
+            this.recipientPublicKey = CryptoComponent.getPublicKeyEncoder().decode(Convert.parseHexString((String)attachmentJSON.get("recipientPublicKey")));
         }
 
-        public UnencryptedPrunableEncryptedMessage(byte[] messageToEncrypt, boolean isText, boolean isCompressed, byte[] recipientPublicKey) {
+        public UnencryptedPrunableEncryptedMessage(byte[] messageToEncrypt, boolean isText, boolean isCompressed, java.security.PublicKey recipientPublicKey) {
             super(null, isText, isCompressed);
             this.messageToEncrypt = messageToEncrypt;
             this.recipientPublicKey = recipientPublicKey;
@@ -835,7 +836,7 @@ public interface Appendix {
                 encryptedMessageJSON.put("messageToEncrypt", isText() ? Convert.toString(messageToEncrypt) : Convert.toHexString(messageToEncrypt));
                 encryptedMessageJSON.put("isText", isText());
                 encryptedMessageJSON.put("isCompressed", isCompressed());
-                json.put("recipientPublicKey", Convert.toHexString(recipientPublicKey));
+                json.put("recipientPublicKey", Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(recipientPublicKey)));
                 json.put("encryptedMessage", encryptedMessageJSON);
             } else {
                 super.putMyJSON(json);
@@ -868,12 +869,12 @@ public interface Appendix {
 
         @Override
         public void encrypt(String secretPhrase) {
-            setEncryptedData(EncryptedData.encrypt(getPlaintext(), secretPhrase, recipientPublicKey));
+            setEncryptedData(CryptoComponent.getDataEncryptor().encrypt(getPlaintext(), secretPhrase, recipientPublicKey));
         }
 
         @Override
         int getEncryptedDataLength() {
-            return EncryptedData.getEncryptedDataLength(getPlaintext());
+            return CryptoComponent.getDataEncryptor().getEncryptedDataLength(getPlaintext());
         }
 
         private byte[] getPlaintext() {
@@ -933,7 +934,7 @@ public interface Appendix {
     final class UnencryptedEncryptedMessage extends EncryptedMessage implements Encryptable {
 
         private final byte[] messageToEncrypt;
-        private final byte[] recipientPublicKey;
+        private final java.security.PublicKey recipientPublicKey;
 
         UnencryptedEncryptedMessage(JSONObject attachmentData) {
             super(attachmentData);
@@ -941,10 +942,10 @@ public interface Appendix {
             JSONObject encryptedMessageJSON = (JSONObject)attachmentData.get("encryptedMessage");
             String messageToEncryptString = (String)encryptedMessageJSON.get("messageToEncrypt");
             messageToEncrypt = isText() ? Convert.toBytes(messageToEncryptString) : Convert.parseHexString(messageToEncryptString);
-            recipientPublicKey = Convert.parseHexString((String)attachmentData.get("recipientPublicKey"));
+            recipientPublicKey = CryptoComponent.getPublicKeyEncoder().decode(Convert.parseHexString((String)attachmentData.get("recipientPublicKey")));
         }
 
-        public UnencryptedEncryptedMessage(byte[] messageToEncrypt, boolean isText, boolean isCompressed, byte[] recipientPublicKey) {
+        public UnencryptedEncryptedMessage(byte[] messageToEncrypt, boolean isText, boolean isCompressed, java.security.PublicKey recipientPublicKey) {
             super(null, isText, isCompressed);
             this.messageToEncrypt = messageToEncrypt;
             this.recipientPublicKey = recipientPublicKey;
@@ -955,7 +956,7 @@ public interface Appendix {
             if (getEncryptedData() != null) {
                 return super.getMySize();
             }
-            return 4 + EncryptedData.getEncryptedSize(getPlaintext());
+            return 4 + CryptoComponent.getDataEncryptor().getEncryptedBytesSize(getPlaintext());
         }
 
         @Override
@@ -974,7 +975,7 @@ public interface Appendix {
                 encryptedMessageJSON.put("isText", isText());
                 encryptedMessageJSON.put("isCompressed", isCompressed());
                 json.put("encryptedMessage", encryptedMessageJSON);
-                json.put("recipientPublicKey", Convert.toHexString(recipientPublicKey));
+                json.put("recipientPublicKey", Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(recipientPublicKey)));
             } else {
                 super.putMyJSON(json);
             }
@@ -990,7 +991,7 @@ public interface Appendix {
 
         @Override
         public void encrypt(String secretPhrase) {
-            setEncryptedData(EncryptedData.encrypt(getPlaintext(), secretPhrase, recipientPublicKey));
+            setEncryptedData(CryptoComponent.getDataEncryptor().encrypt(getPlaintext(), secretPhrase, recipientPublicKey));
         }
 
         private byte[] getPlaintext() {
@@ -999,7 +1000,7 @@ public interface Appendix {
 
         @Override
         int getEncryptedDataLength() {
-            return EncryptedData.getEncryptedDataLength(getPlaintext());
+            return CryptoComponent.getDataEncryptor().getEncryptedDataLength(getPlaintext());
         }
 
     }
@@ -1066,7 +1067,7 @@ public interface Appendix {
             if (getEncryptedData() != null) {
                 return super.getMySize();
             }
-            return 4 + EncryptedData.getEncryptedSize(getPlaintext());
+            return 4 + CryptoComponent.getDataEncryptor().getEncryptedBytesSize(getPlaintext());
         }
 
         @Override
@@ -1101,12 +1102,12 @@ public interface Appendix {
         @Override
         public void encrypt(String secretPhrase) {
             KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
-            setEncryptedData(EncryptedData.encrypt(getPlaintext(), secretPhrase, keyPair.getPublic()));
+            setEncryptedData(CryptoComponent.getDataEncryptor().encrypt(getPlaintext(), secretPhrase, keyPair.getPublic()));
         }
 
         @Override
         int getEncryptedDataLength() {
-            return EncryptedData.getEncryptedDataLength(getPlaintext());
+            return CryptoComponent.getDataEncryptor().getEncryptedDataLength(getPlaintext());
         }
 
         private byte[] getPlaintext() {

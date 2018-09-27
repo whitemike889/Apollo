@@ -20,14 +20,14 @@
 
 package com.apollocurrency.aplwallet.apl;
 
-import com.apollocurrency.aplwallet.apl.crypto.AnonymouslyEncryptedData;
-
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.db.*;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import com.apollocurrency.aplwallet.apl.util.Listener;
 import com.apollocurrency.aplwallet.apl.util.Listeners;
 import org.slf4j.Logger;
 
+import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -39,6 +39,8 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 public final class Shuffling {
     private static final Logger LOG = getLogger(Shuffling.class);
+
+    private static final java.security.PublicKey[] EMPTY_PUBLIC_KEYS_ARRAY = new java.security.PublicKey[0];
 
     public enum Event {
         SHUFFLING_CREATED, SHUFFLING_PROCESSING_ASSIGNED, SHUFFLING_PROCESSING_FINISHED, SHUFFLING_BLAME_STARTED, SHUFFLING_CANCELLED, SHUFFLING_DONE
@@ -284,7 +286,7 @@ public final class Shuffling {
 
     private Stage stage;
     private long assigneeAccountId;
-    private byte[][] recipientPublicKeys;
+    private java.security.PublicKey[] recipientPublicKeys;
 
     private Shuffling(Transaction transaction, Attachment.ShufflingCreation attachment) {
         this.id = transaction.getId();
@@ -297,7 +299,7 @@ public final class Shuffling {
         this.blocksRemaining = attachment.getRegistrationPeriod();
         this.stage = Stage.REGISTRATION;
         this.assigneeAccountId = issuerId;
-        this.recipientPublicKeys = Convert.EMPTY_BYTES;
+        this.recipientPublicKeys = EMPTY_PUBLIC_KEYS_ARRAY;
         this.registrantCount = 1;
     }
 
@@ -312,8 +314,14 @@ public final class Shuffling {
         this.blocksRemaining = rs.getShort("blocks_remaining");
         this.stage = Stage.get(rs.getByte("stage"));
         this.assigneeAccountId = rs.getLong("assignee_account_id");
-        this.recipientPublicKeys = DbUtils.getArray(rs, "recipient_public_keys", byte[][].class, Convert.EMPTY_BYTES);
+        byte[][] recipientPublicKeysBytes = DbUtils.getArray(rs, "recipient_public_keys", byte[][].class, Convert.EMPTY_BYTES);
         this.registrantCount = rs.getByte("registrant_count");
+
+        this.recipientPublicKeys = new java.security.PublicKey[recipientPublicKeysBytes.length];
+        for(int i = 0; i < recipientPublicKeysBytes.length; i++) {
+            this.recipientPublicKeys[i] = CryptoComponent.getPublicKeyEncoder().decode(recipientPublicKeysBytes[i]);
+        }
+
     }
 
     private Shuffling(long id, DbKey dbKey, long holdingId, HoldingType holdingType, long issuerId, long amount, byte participantCount) {
@@ -419,7 +427,7 @@ public final class Shuffling {
         return assigneeAccountId;
     }
 
-    public byte[][] getRecipientPublicKeys() {
+    public java.security.PublicKey[] getRecipientPublicKeys() {
         return recipientPublicKeys;
     }
 
@@ -439,7 +447,7 @@ public final class Shuffling {
         return TransactionDb.getFullHash(id);
     }
 
-    public Attachment.ShufflingAttachment process(final long accountId, final String secretPhrase, final byte[] recipientPublicKey) {
+    public Attachment.ShufflingAttachment process(final long accountId, final String secretPhrase, final java.security.PublicKey recipientPublicKey) {
         byte[][] data = Convert.EMPTY_BYTES;
         byte[] shufflingStateHash = null;
         int participantIndex = 0;
@@ -477,11 +485,11 @@ public final class Shuffling {
         }
         // Calculate the token for the current sender by iteratively encrypting it using the public key of all the participants
         // which did not perform shuffle processing yet
-        byte[] bytesToEncrypt = recipientPublicKey;
+        byte[] bytesToEncrypt = CryptoComponent.getPublicKeyEncoder().encode(recipientPublicKey);
         byte[] nonce = Convert.toBytes(this.id);
         for (int i = shufflingParticipants.size() - 1; i > participantIndex; i--) {
             ShufflingParticipant participant = shufflingParticipants.get(i);
-            byte[] participantPublicKey = Account.getPublicKey(participant.getAccountId());
+            java.security.PublicKey participantPublicKey = Account.getPublicKey(participant.getAccountId());
             AnonymouslyEncryptedData encryptedData = AnonymouslyEncryptedData.encrypt(bytesToEncrypt, secretPhrase, participantPublicKey, nonce);
             bytesToEncrypt = encryptedData.getBytes();
         }
@@ -490,11 +498,12 @@ public final class Shuffling {
         Collections.sort(outputDataList, Convert.byteArrayComparator);
         if (isLast) {
             Set<Long> recipientAccounts = new HashSet<>(participantCount);
-            for (byte[] publicKey : outputDataList) {
-                if (!Crypto.isCanonicalPublicKey(publicKey) || !recipientAccounts.add(Account.getId(publicKey))) {
+            for (byte[] publicKeyBytes : outputDataList) {
+                java.security.PublicKey publicKey = CryptoComponent.getPublicKeyEncoder().decode(publicKeyBytes);
+                if (!recipientAccounts.add(Account.getId(publicKey))) {
                     // duplicate or invalid recipient public key
-                    LOG.debug("Invalid recipient public key " + Convert.toHexString(publicKey));
-                    return new Attachment.ShufflingRecipients(this.id, Convert.EMPTY_BYTES, shufflingStateHash);
+                    LOG.debug("Invalid recipient public key " + Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(publicKey)));
+                    return new Attachment.ShufflingRecipients(this.id, EMPTY_PUBLIC_KEYS_ARRAY, shufflingStateHash);
                 }
             }
             // last participant prepares ShufflingRecipients transaction instead of ShufflingProcessing
@@ -528,7 +537,8 @@ public final class Shuffling {
             if (shufflingStateHash == null || !Arrays.equals(shufflingStateHash, getStateHash())) {
                 throw new RuntimeException("Current shuffling state hash does not match");
             }
-            long accountId = Account.getId(Crypto.getPublicKey(secretPhrase));
+            KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+            long accountId = Account.getId(keyPair.getPublic());
             byte[][] data = null;
             while (participants.hasNext()) {
                 ShufflingParticipant participant = participants.next();
@@ -545,7 +555,7 @@ public final class Shuffling {
             }
             final byte[] nonce = Convert.toBytes(this.id);
             final List<byte[]> keySeeds = new ArrayList<>();
-            byte[] nextParticipantPublicKey = Account.getPublicKey(participants.next().getAccountId());
+            java.security.PublicKey nextParticipantPublicKey = Account.getPublicKey(participants.next().getAccountId());
             byte[] keySeed = Crypto.getKeySeed(secretPhrase, nextParticipantPublicKey, nonce);
             keySeeds.add(keySeed);
             byte[] publicKey = Crypto.getPublicKey(keySeed);

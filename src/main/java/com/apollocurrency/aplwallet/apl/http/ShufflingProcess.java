@@ -77,7 +77,7 @@ public final class ShufflingProcess extends CreateTransaction {
         }
 
         String secretPhrase = ParameterParser.getSecretPhrase(req, true);
-        byte[] recipientPublicKey = ParameterParser.getPublicKey(req, "recipient");
+        java.security.PublicKey recipientPublicKey = ParameterParser.getPublicKey(req, "recipient");
         if (Account.getAccount(recipientPublicKey) != null) {
             return INCORRECT_PUBLIC_KEY; // do not allow existing account to be used as recipient
         }

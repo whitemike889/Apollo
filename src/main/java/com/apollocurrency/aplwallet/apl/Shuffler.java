@@ -21,10 +21,12 @@
 package com.apollocurrency.aplwallet.apl;
 
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.db.DbIterator;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.slf4j.Logger;
 
+import java.security.KeyPair;
 import java.util.*;
 
 import static org.slf4j.LoggerFactory.getLogger;
@@ -36,9 +38,10 @@ public final class Shuffler {
     private static final Map<String, Map<Long, Shuffler>> shufflingsMap = new HashMap<>();
     private static final Map<Integer, Set<String>> expirations = new HashMap<>();
 
-    public static Shuffler addOrGetShuffler(String secretPhrase, byte[] recipientPublicKey, byte[] shufflingFullHash) throws ShufflerException {
+    public static Shuffler addOrGetShuffler(String secretPhrase, java.security.PublicKey recipientPublicKey, byte[] shufflingFullHash) throws ShufflerException {
         String hash = Convert.toHexString(shufflingFullHash);
-        long accountId = Account.getId(Crypto.getPublicKey(secretPhrase));
+        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+        long accountId = Account.getId(keyPair.getPublic());
         BlockchainImpl.getInstance().writeLock();
         try {
             Map<Long, Shuffler> map = shufflingsMap.get(hash);
@@ -76,7 +79,7 @@ public final class Shuffler {
                 map.put(accountId, shuffler);
                 LOG.info(String.format("Started shuffler for account %s, shuffling %s",
                         Long.toUnsignedString(accountId), Long.toUnsignedString(Convert.fullHashToId(shufflingFullHash))));
-            } else if (!Arrays.equals(shuffler.recipientPublicKey, recipientPublicKey)) {
+            } else if (!shuffler.recipientPublicKey.equals(recipientPublicKey)) {
                 throw new DuplicateShufflerException("A shuffler with different recipientPublicKey already started");
             } else if (!Arrays.equals(shuffler.shufflingFullHash, shufflingFullHash)) {
                 throw new DuplicateShufflerException("A shuffler with different shufflingFullHash already started");
@@ -293,19 +296,20 @@ public final class Shuffler {
 
     private final long accountId;
     private final String secretPhrase;
-    private final byte[] recipientPublicKey;
+    private final java.security.PublicKey recipientPublicKey;
     private final byte[] shufflingFullHash;
     private volatile Transaction failedTransaction;
     private volatile AplException.NotCurrentlyValidException failureCause;
 
-    private Shuffler(String secretPhrase, byte[] recipientPublicKey, byte[] shufflingFullHash) {
+    private Shuffler(String secretPhrase, java.security.PublicKey recipientPublicKey, byte[] shufflingFullHash) {
+        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
         this.secretPhrase = secretPhrase;
-        this.accountId = Account.getId(Crypto.getPublicKey(secretPhrase));
+        this.accountId = Account.getId(keyPair.getPublic());
         this.recipientPublicKey = recipientPublicKey;
         this.shufflingFullHash = shufflingFullHash;
     }
 
-    private Shuffler(long accountId, String secretPhrase, byte[] recipientPublicKey, byte[] shufflingFullHash) {
+    private Shuffler(long accountId, String secretPhrase, java.security.PublicKey recipientPublicKey, byte[] shufflingFullHash) {
         this.accountId = accountId;
         this.secretPhrase = secretPhrase;
         this.recipientPublicKey = recipientPublicKey;
@@ -316,7 +320,7 @@ public final class Shuffler {
         return accountId;
     }
 
-    public byte[] getRecipientPublicKey() {
+    public java.security.PublicKey getRecipientPublicKey() {
         return recipientPublicKey;
     }
 
@@ -386,8 +390,8 @@ public final class Shuffler {
         ShufflingParticipant shufflingParticipant = shuffling.getParticipant(accountId);
         if (shufflingParticipant != null && shufflingParticipant.getIndex() != shuffling.getParticipantCount() - 1) {
             boolean found = false;
-            for (byte[] key : shuffling.getRecipientPublicKeys()) {
-                if (Arrays.equals(key, recipientPublicKey)) {
+            for (java.security.PublicKey key : shuffling.getRecipientPublicKeys()) {
+                if (key.equals(recipientPublicKey)) {
                     found = true;
                     break;
                 }
@@ -453,7 +457,8 @@ public final class Shuffler {
             }
         }
         try {
-            Transaction.Builder builder = Apl.newTransactionBuilder(Crypto.getPublicKey(secretPhrase), 0, 0,
+            KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+            Transaction.Builder builder = Apl.newTransactionBuilder(keyPair.getPublic(), 0, 0,
                     (short) 1440, attachment);
             builder.timestamp(Apl.getBlockchain().getLastBlockTimestamp());
             Transaction transaction = builder.build(secretPhrase);

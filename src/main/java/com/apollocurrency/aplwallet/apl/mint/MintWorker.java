@@ -22,6 +22,7 @@ package com.apollocurrency.aplwallet.apl.mint;
 
 import com.apollocurrency.aplwallet.apl.*;
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.crypto.HashFunction;
 import com.apollocurrency.aplwallet.apl.http.API;
 import com.apollocurrency.aplwallet.apl.util.Convert;
@@ -34,6 +35,7 @@ import javax.net.ssl.HttpsURLConnection;
 import java.io.*;
 import java.math.BigInteger;
 import java.net.*;
+import java.security.KeyPair;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -58,7 +60,8 @@ public class MintWorker {
         }
         boolean isSubmitted = Apl.getBooleanProperty("apl.mint.isSubmitted");
         boolean isStopOnError = Apl.getBooleanProperty("apl.mint.stopOnError");
-        byte[] publicKeyHash = CryptoComponent.getDigestCalculator().createDigest().digest(Crypto.getPublicKey(secretPhrase));
+        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+        byte[] publicKeyHash = CryptoComponent.getDigestCalculator().createDigest().digest(CryptoComponent.getPublicKeyEncoder().encode(keyPair.getPublic()));
         long accountId = Convert.fullHashToId(publicKeyHash);
         String rsAccount = Convert.rsAccount(accountId);
         JSONObject currency = getCurrency(currencyCode);
@@ -158,7 +161,8 @@ public class MintWorker {
     private JSONObject currencyMint(String secretPhrase, long currencyId, long nonce, long units, long counter) {
         JSONObject ecBlock = getECBlock();
         Attachment attachment = new Attachment.MonetarySystemCurrencyMinting(nonce, currencyId, units, counter);
-        Transaction.Builder builder = Apl.newTransactionBuilder(Crypto.getPublicKey(secretPhrase), 0, Constants.ONE_APL,
+        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+        Transaction.Builder builder = Apl.newTransactionBuilder(keyPair.getPublic(), 0, Constants.ONE_APL,
                 (short) 120, attachment)
                 .timestamp(((Long) ecBlock.get("timestamp")).intValue())
                 .ecBlockHeight(((Long) ecBlock.get("ecBlockHeight")).intValue())
