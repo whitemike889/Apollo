@@ -370,8 +370,8 @@ public final class JSONData {
         json.put("shufflingStateHash", Convert.toHexString(shuffling.getStateHash()));
         json.put("shufflingFullHash", Convert.toHexString(shuffling.getFullHash()));
         JSONArray recipientPublicKeys = new JSONArray();
-        for (byte[] recipientPublicKey : shuffling.getRecipientPublicKeys()) {
-            recipientPublicKeys.add(Convert.toHexString(recipientPublicKey));
+        for (java.security.PublicKey recipientPublicKey : shuffling.getRecipientPublicKeys()) {
+            recipientPublicKeys.add(Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(recipientPublicKey)));
         }
         if (recipientPublicKeys.size() > 0) {
             json.put("recipientPublicKeys", recipientPublicKeys);
@@ -421,7 +421,7 @@ public final class JSONData {
         json.put("block", block.getStringId());
         json.put("height", block.getHeight());
         putAccount(json, "generator", block.getGeneratorId());
-        json.put("generatorPublicKey", Convert.toHexString(block.getGeneratorPublicKey()));
+        json.put("generatorPublicKey", Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(block.getGeneratorPublicKey())));
         json.put("timestamp", block.getTimestamp());
         json.put("numberOfTransactions", block.getTransactions().size());
         json.put("totalFeeATM", String.valueOf(block.getTotalFeeATM()));

@@ -24,12 +24,14 @@ import com.apollocurrency.aplwallet.apl.Account;
 import com.apollocurrency.aplwallet.apl.AplException;
 import com.apollocurrency.aplwallet.apl.DigitalGoodsStore;
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 import org.slf4j.Logger;
 
 import javax.servlet.http.HttpServletRequest;
+import java.security.KeyPair;
 import java.util.Arrays;
 
 import static com.apollocurrency.aplwallet.apl.http.JSONResponses.DECRYPTION_FAILED;
@@ -71,10 +73,11 @@ public final class GetDGSPurchase extends APIServlet.APIRequestHandler {
                 byte[] decrypted = Convert.EMPTY_BYTE;
                 if (data.length != 0) {
                     if (secretPhrase != null) {
-                        byte[] readerPublicKey = Crypto.getPublicKey(secretPhrase);
-                        byte[] sellerPublicKey = Account.getPublicKey(purchase.getSellerId());
-                        byte[] buyerPublicKey = Account.getPublicKey(purchase.getBuyerId());
-                        byte[] publicKey = Arrays.equals(sellerPublicKey, readerPublicKey) ? buyerPublicKey : sellerPublicKey;
+                        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+                        java.security.PublicKey readerPublicKey = keyPair.getPublic();
+                        java.security.PublicKey sellerPublicKey = Account.getPublicKey(purchase.getSellerId());
+                        java.security.PublicKey buyerPublicKey = Account.getPublicKey(purchase.getBuyerId());
+                        java.security.PublicKey publicKey = sellerPublicKey.equals(readerPublicKey) ? buyerPublicKey : sellerPublicKey;
                         if (publicKey != null) {
                             decrypted = Account.decryptFrom(publicKey, purchase.getEncryptedGoods(), secretPhrase, true);
                         }

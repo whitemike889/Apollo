@@ -21,12 +21,15 @@
 package com.apollocurrency.aplwallet.apl;
 
 import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
+import com.apollocurrency.aplwallet.apl.crypto.legacy.Crypto;
+import com.apollocurrency.aplwallet.apl.crypto.symmetric.AnonymouslyEncryptedData;
 import com.apollocurrency.aplwallet.apl.db.*;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import com.apollocurrency.aplwallet.apl.util.Listener;
 import com.apollocurrency.aplwallet.apl.util.Listeners;
 import org.slf4j.Logger;
 
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.sql.Connection;
@@ -473,13 +476,13 @@ public final class Shuffling {
         // decrypt the tokens bundled in the current data
         List<byte[]> outputDataList = new ArrayList<>();
         for (byte[] bytes : data) {
-            AnonymouslyEncryptedData encryptedData = AnonymouslyEncryptedData.readEncryptedData(bytes);
             try {
+                AnonymouslyEncryptedData encryptedData = CryptoComponent.getAnonymousDataEncryptor().readEncryptedData(bytes);
                 byte[] decrypted = encryptedData.decrypt(secretPhrase);
                 outputDataList.add(decrypted);
             } catch (Exception e) {
                 LOG.info("Decryption failed", e);
-                return isLast ? new Attachment.ShufflingRecipients(this.id, Convert.EMPTY_BYTES, shufflingStateHash)
+                return isLast ? new Attachment.ShufflingRecipients(this.id, EMPTY_PUBLIC_KEYS_ARRAY, shufflingStateHash)
                         : new Attachment.ShufflingProcessing(this.id, Convert.EMPTY_BYTES, shufflingStateHash);
             }
         }
@@ -490,8 +493,13 @@ public final class Shuffling {
         for (int i = shufflingParticipants.size() - 1; i > participantIndex; i--) {
             ShufflingParticipant participant = shufflingParticipants.get(i);
             java.security.PublicKey participantPublicKey = Account.getPublicKey(participant.getAccountId());
-            AnonymouslyEncryptedData encryptedData = AnonymouslyEncryptedData.encrypt(bytesToEncrypt, secretPhrase, participantPublicKey, nonce);
-            bytesToEncrypt = encryptedData.getBytes();
+            AnonymouslyEncryptedData encryptedData = null;
+            try {
+                encryptedData = CryptoComponent.getAnonymousDataEncryptor().encrypt(bytesToEncrypt, secretPhrase, participantPublicKey, nonce);
+                bytesToEncrypt = encryptedData.getBytes();
+            } catch (InvalidKeyException e) {
+                e.printStackTrace();
+            }
         }
         outputDataList.add(bytesToEncrypt);
         // Shuffle the tokens and save the shuffled tokens as the participant data
@@ -507,8 +515,8 @@ public final class Shuffling {
                 }
             }
             // last participant prepares ShufflingRecipients transaction instead of ShufflingProcessing
-            return new Attachment.ShufflingRecipients(this.id, outputDataList.toArray(new byte[outputDataList.size()][]),
-                    shufflingStateHash);
+            byte[][] encodedPublicKeys = outputDataList.toArray(new byte[outputDataList.size()][]);
+            return new Attachment.ShufflingRecipients(this.id, CryptoComponent.getPublicKeyEncoder().decode(encodedPublicKeys), shufflingStateHash);
         } else {
             byte[] previous = null;
             for (byte[] decrypted : outputDataList) {
@@ -562,12 +570,16 @@ public final class Shuffling {
             byte[] decryptedBytes = null;
             // find the data that we encrypted
             for (byte[] bytes : data) {
-                AnonymouslyEncryptedData encryptedData = AnonymouslyEncryptedData.readEncryptedData(bytes);
-                if (Arrays.equals(encryptedData.getPublicKey(), publicKey)) {
-                    try {
-                        decryptedBytes = encryptedData.decrypt(keySeed, nextParticipantPublicKey);
-                        break;
-                    } catch (Exception ignore) {}
+                try {
+                    AnonymouslyEncryptedData encryptedData = CryptoComponent.getAnonymousDataEncryptor().readEncryptedData(bytes);
+                    if (encryptedData.getPublicKey().equals(publicKey)) {
+                        try {
+                            decryptedBytes = encryptedData.decrypt(keySeed, nextParticipantPublicKey);
+                            break;
+                        } catch (Exception ignore) {}
+                    }
+                } catch (InvalidKeyException e) {
+                    e.printStackTrace();
                 }
             }
             if (decryptedBytes == null) {
@@ -578,8 +590,12 @@ public final class Shuffling {
                 nextParticipantPublicKey = Account.getPublicKey(participants.next().getAccountId());
                 keySeed = Crypto.getKeySeed(secretPhrase, nextParticipantPublicKey, nonce);
                 keySeeds.add(keySeed);
-                AnonymouslyEncryptedData encryptedData = AnonymouslyEncryptedData.readEncryptedData(decryptedBytes);
-                decryptedBytes = encryptedData.decrypt(keySeed, nextParticipantPublicKey);
+                try {
+                    AnonymouslyEncryptedData encryptedData = CryptoComponent.getAnonymousDataEncryptor().readEncryptedData(decryptedBytes);
+                    decryptedBytes = encryptedData.decrypt(keySeed, nextParticipantPublicKey);
+                } catch (InvalidKeyException e) {
+                    e.printStackTrace();
+                }
             }
             return new Attachment.ShufflingCancellation(this.id, data, keySeeds.toArray(new byte[keySeeds.size()][]),
                     shufflingStateHash, cancellingAccountId);
@@ -636,7 +652,7 @@ public final class Shuffling {
         }
         participant.verify();
         // last participant announces all valid recipient public keys
-        for (byte[] recipientPublicKey : recipientPublicKeys) {
+        for (java.security.PublicKey recipientPublicKey : recipientPublicKeys) {
             long recipientId = Account.getId(recipientPublicKey);
             if (Account.setOrVerify(recipientId, recipientPublicKey)) {
                 Account.addOrGetAccount(recipientId).apply(recipientPublicKey);
@@ -675,9 +691,9 @@ public final class Shuffling {
             cancelBy(getLastParticipant());
             return;
         }
-        for (byte[] recipientPublicKey : recipientPublicKeys) {
-            byte[] publicKey = Account.getPublicKey(Account.getId(recipientPublicKey));
-            if (publicKey != null && !Arrays.equals(publicKey, recipientPublicKey)) {
+        for (java.security.PublicKey recipientPublicKey : recipientPublicKeys) {
+            java.security.PublicKey publicKey = Account.getPublicKey(Account.getId(recipientPublicKey));
+            if (publicKey != null && !publicKey.equals(recipientPublicKey)) {
                 // distribution not possible, do a cancellation on behalf of last participant instead
                 cancelBy(getLastParticipant());
                 return;
@@ -693,7 +709,7 @@ public final class Shuffling {
                 }
             }
         }
-        for (byte[] recipientPublicKey : recipientPublicKeys) {
+        for (java.security.PublicKey recipientPublicKey : recipientPublicKeys) {
             long recipientId = Account.getId(recipientPublicKey);
             Account recipientAccount = Account.addOrGetAccount(recipientId);
             recipientAccount.apply(recipientPublicKey);
@@ -794,20 +810,24 @@ public final class Shuffling {
             byte[] publicKey = Crypto.getPublicKey(keySeeds[0]);
             AnonymouslyEncryptedData encryptedData = null;
             for (byte[] bytes : participant.getBlameData()) {
-                encryptedData = AnonymouslyEncryptedData.readEncryptedData(bytes);
-                if (Arrays.equals(publicKey, encryptedData.getPublicKey())) {
-                    // found the data that this participant encrypted
-                    break;
+                try {
+                    encryptedData = CryptoComponent.getAnonymousDataEncryptor().readEncryptedData(bytes);
+                    if (publicKey.equals(encryptedData.getPublicKey())) {
+                        // found the data that this participant encrypted
+                        break;
+                    }
+                } catch (InvalidKeyException e) {
+                    e.printStackTrace();
                 }
             }
-            if (encryptedData == null || !Arrays.equals(publicKey, encryptedData.getPublicKey())) {
+            if (encryptedData == null || !publicKey.equals(encryptedData.getPublicKey())) {
                 // participant lied about key seeds or data
                 LOG.debug("Participant %s did not submit blame data, or revealed invalid keys", Long.toUnsignedString(participant.getAccountId()));
                 return participant.getAccountId();
             }
             for (int k = i + 1; k < participantCount; k++) {
                 ShufflingParticipant nextParticipant = participants.get(k);
-                byte[] nextParticipantPublicKey = Account.getPublicKey(nextParticipant.getAccountId());
+                java.security.PublicKey nextParticipantPublicKey = Account.getPublicKey(nextParticipant.getAccountId());
                 byte[] keySeed = keySeeds[k - i - 1];
                 byte[] participantBytes;
                 try {
@@ -825,13 +845,14 @@ public final class Shuffling {
                         LOG.debug("Participant %s submitted invalid recipient public key", Long.toUnsignedString(participant.getAccountId()));
                         return participant.getAccountId();
                     }
+                    java.security.PublicKey participantPublicKey = CryptoComponent.getPublicKeyEncoder().decode(participantBytes);
                     // check for collisions and assume they are intentional
-                    byte[] currentPublicKey = Account.getPublicKey(Account.getId(participantBytes));
-                    if (currentPublicKey != null && !Arrays.equals(currentPublicKey, participantBytes)) {
+                    java.security.PublicKey currentPublicKey = Account.getPublicKey(Account.getId(participantPublicKey));
+                    if (currentPublicKey != null && !currentPublicKey.equals(participantPublicKey)) {
                         LOG.debug("Participant %s submitted colliding recipient public key", Long.toUnsignedString(participant.getAccountId()));
                         return participant.getAccountId();
                     }
-                    if (!recipientAccounts.add(Account.getId(participantBytes))) {
+                    if (!recipientAccounts.add(Account.getId(participantPublicKey))) {
                         LOG.debug("Participant %s submitted duplicate recipient public key", Long.toUnsignedString(participant.getAccountId()));
                         return participant.getAccountId();
                     }
@@ -840,8 +861,8 @@ public final class Shuffling {
                     break;
                 }
                 boolean found = false;
-                for (byte[] bytes : isLast ? recipientPublicKeys : nextParticipant.getBlameData()) {
-                    if (Arrays.equals(participantBytes, bytes)) {
+                for (java.security.PublicKey key : isLast ? recipientPublicKeys : CryptoComponent.getPublicKeyEncoder().decode(nextParticipant.getBlameData())) {
+                    if (participantBytes.equals(key)) {
                         found = true;
                         break;
                     }
@@ -852,7 +873,11 @@ public final class Shuffling {
                     return nextParticipant.getAccountId();
                 }
                 if (!isLast) {
-                    encryptedData = AnonymouslyEncryptedData.readEncryptedData(participantBytes);
+                    try {
+                        encryptedData = CryptoComponent.getAnonymousDataEncryptor().readEncryptedData(participantBytes);
+                    } catch (InvalidKeyException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }

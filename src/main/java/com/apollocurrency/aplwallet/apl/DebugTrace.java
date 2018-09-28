@@ -246,7 +246,7 @@ public final class DebugTrace {
                 log(getValues(shufflingParticipant.getAccountId(), shuffling, false));
             }
         });
-        for (byte[] recipientPublicKey : shuffling.getRecipientPublicKeys()) {
+        for (java.security.PublicKey recipientPublicKey : shuffling.getRecipientPublicKeys()) {
             long recipientId = Account.getId(recipientPublicKey);
             if (include(recipientId)) {
                 log(getValues(recipientId, shuffling, true));

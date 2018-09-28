@@ -492,15 +492,12 @@ public abstract class ShufflingTransaction extends TransactionType {
             if (shufflingStateHash == null || !Arrays.equals(shufflingStateHash, attachment.getShufflingStateHash())) {
                 throw new AplException.NotCurrentlyValidException("Shuffling state hash doesn't match");
             }
-            byte[][] recipientPublicKeys = attachment.getRecipientPublicKeys();
+            java.security.PublicKey[] recipientPublicKeys = attachment.getRecipientPublicKeys();
             if (recipientPublicKeys.length != shuffling.getParticipantCount() && recipientPublicKeys.length != 0) {
                 throw new AplException.NotValidException(String.format("Invalid number of recipient public keys %d", recipientPublicKeys.length));
             }
             Set<Long> recipientAccounts = new HashSet<>(recipientPublicKeys.length);
-            for (byte[] recipientPublicKey : recipientPublicKeys) {
-                if (!Crypto.isCanonicalPublicKey(recipientPublicKey)) {
-                    throw new AplException.NotValidException("Invalid recipient public key " + Convert.toHexString(recipientPublicKey));
-                }
+            for (java.security.PublicKey recipientPublicKey : recipientPublicKeys) {
                 if (!recipientAccounts.add(Account.getId(recipientPublicKey))) {
                     throw new AplException.NotValidException("Duplicate recipient accounts");
                 }

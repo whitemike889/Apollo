@@ -789,12 +789,13 @@ public final class ParameterParser {
     }
 
     public static PrivateTransactionsAPIData parsePrivateTransactionRequest(HttpServletRequest req) throws ParameterException {
-        byte[] publicKey = Convert.emptyToNull(ParameterParser.getBytes(req, "publicKey", false));
+        java.security.PublicKey publicKey = CryptoComponent.getPublicKeyEncoder().decode(Convert.emptyToNull(ParameterParser.getBytes(req, "publicKey", false)));
         String secretPhrase = ParameterParser.getSecretPhrase(req, false);
         boolean encrypt;
         //prefer public key
         if (secretPhrase != null && publicKey == null) {
-            publicKey = Crypto.getPublicKey(secretPhrase);
+            KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+            publicKey = keyPair.getPublic();
             encrypt = false;
         } else {
             encrypt = true;
@@ -810,14 +811,14 @@ public final class ParameterParser {
 
     public static class PrivateTransactionsAPIData {
         private boolean encrypt;
-        private byte[] publicKey;
+        private java.security.PublicKey publicKey;
         private byte[] sharedKey;
         private long accountId;
 
         public PrivateTransactionsAPIData() {
         }
 
-        public PrivateTransactionsAPIData(boolean encrypt, byte[] publicKey, byte[] sharedKey, long accountId) {
+        public PrivateTransactionsAPIData(boolean encrypt, java.security.PublicKey publicKey, byte[] sharedKey, long accountId) {
             this.encrypt = encrypt;
             this.publicKey = publicKey;
             this.sharedKey = sharedKey;
@@ -832,11 +833,11 @@ public final class ParameterParser {
             this.encrypt = encrypt;
         }
 
-        public byte[] getPublicKey() {
+        public java.security.PublicKey getPublicKey() {
             return publicKey;
         }
 
-        public void setPublicKey(byte[] publicKey) {
+        public void setPublicKey(java.security.PublicKey publicKey) {
             this.publicKey = publicKey;
         }
 

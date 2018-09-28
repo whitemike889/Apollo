@@ -49,7 +49,7 @@ public final class GetSharedKey extends APIServlet.APIRequestHandler {
         String secretPhrase = ParameterParser.getSecretPhrase(req, true);
         byte[] nonce = ParameterParser.getBytes(req, "nonce", true);
         long accountId = ParameterParser.getAccountId(req, "account", true);
-        byte[] publicKey = Account.getPublicKey(accountId);
+        java.security.PublicKey publicKey = Account.getPublicKey(accountId);
         if (publicKey == null) {
             return JSONResponses.INCORRECT_ACCOUNT;
         }

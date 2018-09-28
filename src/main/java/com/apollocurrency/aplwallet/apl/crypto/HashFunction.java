@@ -18,7 +18,11 @@
  * Copyright © 2018 Apollo Foundation
  */
 
-package com.apollocurrency.aplwallet.apl.crypto.legacy;
+package com.apollocurrency.aplwallet.apl.crypto;
+
+import com.apollocurrency.aplwallet.apl.crypto.legacy.Crypto;
+import com.apollocurrency.aplwallet.apl.crypto.legacy.KNV25;
+import com.apollocurrency.aplwallet.apl.crypto.legacy.Scrypt;
 
 public enum HashFunction {
 

@@ -5,6 +5,7 @@ import com.apollocurrency.aplwallet.apl.crypto.asymmetric.AsymmetricKeyGenerator
 import com.apollocurrency.aplwallet.apl.crypto.asymmetric.PublicKeyEncoder;
 import com.apollocurrency.aplwallet.apl.crypto.asymmetric.SharedKeyCalculator;
 import com.apollocurrency.aplwallet.apl.crypto.asymmetric.signature.Signer;
+import com.apollocurrency.aplwallet.apl.crypto.legacy.AnonymousDataEncryptor;
 import com.apollocurrency.aplwallet.apl.crypto.legacy.KeyGenerator;
 import com.apollocurrency.aplwallet.apl.crypto.symmetric.DataEncryptor;
 
@@ -20,6 +21,7 @@ public class CryptoComponent {
     private static final SharedKeyCalculator SHARED_KEY_CALCULATOR = new com.apollocurrency.aplwallet.apl.crypto.legacy.SharedKeyCalculator();
     private static final DigestCalculator DIGEST_CALCULATOR = new com.apollocurrency.aplwallet.apl.crypto.legacy.DigestCalculator();
     private static final DataEncryptor DATA_ENCRYPTOR = new com.apollocurrency.aplwallet.apl.crypto.legacy.DataEncryptor();
+    private static final AnonymousDataEncryptor ANONYMOUS_DATA_ENCRYPTOR = new com.apollocurrency.aplwallet.apl.crypto.legacy.AnonymousDataEncryptor();
 
     public static PublicKeyEncoder getPublicKeyEncoder() {
         return PUBLIC_KEY_ENCODER_INSTANCE;
@@ -43,6 +45,10 @@ public class CryptoComponent {
 
     public static DataEncryptor getDataEncryptor() {
         return DATA_ENCRYPTOR;
+    }
+
+    public static AnonymousDataEncryptor getAnonymousDataEncryptor() {
+        return ANONYMOUS_DATA_ENCRYPTOR;
     }
 
 }

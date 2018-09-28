@@ -24,9 +24,11 @@ import com.apollocurrency.aplwallet.apl.Account;
 import com.apollocurrency.aplwallet.apl.Apl;
 import com.apollocurrency.aplwallet.apl.Db;
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.slf4j.Logger;
 
+import java.security.KeyPair;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -52,7 +54,7 @@ public final class PassphraseRecovery {
 
     private void recover() {
         try {
-            Map<Long, byte[]> publicKeys = getPublicKeys();
+            Map<Long, java.security.PublicKey> publicKeys = getPublicKeys();
             String wildcard = Apl.getStringProperty("recoveryWildcard", "", false, "UTF-8"); // support UTF8 chars
             if ("".equals(wildcard)) {
                 LOG.info("Specify in the recoveryWildcard setting, an approximate passphrase as close as possible to the real passphrase");
@@ -108,15 +110,15 @@ public final class PassphraseRecovery {
         return IntStream.rangeClosed(from, to).mapToObj(c -> "" + (char) c).collect(Collectors.joining()).toCharArray();
     }
 
-    static Map<Long, byte[]> getPublicKeys() {
+    static Map<Long, java.security.PublicKey> getPublicKeys() {
         Db.init();
-        Map<Long, byte[]> publicKeys = new HashMap<>();
+        Map<Long, java.security.PublicKey> publicKeys = new HashMap<>();
         try (Connection con = Db.db.getConnection();
              PreparedStatement selectBlocks = con.prepareStatement("SELECT * FROM public_key WHERE latest=TRUE");
              ResultSet rs = selectBlocks.executeQuery()) {
             while (rs.next()) {
                 long accountId = rs.getLong("account_id");
-                byte[] publicKey = rs.getBytes("public_key");
+                java.security.PublicKey publicKey = CryptoComponent.getPublicKeyEncoder().decode(rs.getBytes("public_key"));
                 publicKeys.put(accountId, publicKey);
             }
         } catch (SQLException e) {
@@ -128,13 +130,13 @@ public final class PassphraseRecovery {
     }
 
     static class Scanner implements Callable<Solution> {
-        private Map<Long, byte[]> publicKeys;
+        private Map<Long, java.security.PublicKey> publicKeys;
         private int[] positions;
         private char[] wildcard;
         private char[] dictionary;
         private Solution realSolution = NO_SOLUTION;
 
-        Scanner(Map<Long, byte[]> publicKeys, int[] positions, char[] wildcard, char[] dictionary) {
+        Scanner(Map<Long, java.security.PublicKey> publicKeys, int[] positions, char[] wildcard, char[] dictionary) {
             this.publicKeys = publicKeys;
             this.positions = positions;
             this.wildcard = wildcard;
@@ -205,7 +207,8 @@ public final class PassphraseRecovery {
                     }
                 } else {
                     String secretPhrase = new String(wildcard);
-                    byte[] publicKey = Crypto.getPublicKey(secretPhrase);
+                    KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+                    java.security.PublicKey publicKey = keyPair.getPublic();
                     long id = Account.getId(publicKey);
                     if (publicKeys.keySet().contains(id)) {
                         return new Solution(secretPhrase, publicKeys.get(id), id, Convert.rsAccount(id));
@@ -223,21 +226,21 @@ public final class PassphraseRecovery {
 
     static class Solution {
         private String passphrase;
-        private byte[] publicKey;
+        private java.security.PublicKey publicKey;
         private long accountId;
         private String rsAccount;
 
         Solution() {
         }
 
-        Solution(String passphrase, byte[] publicKey, long accountId, String rsAccount) {
+        Solution(String passphrase, java.security.PublicKey publicKey, long accountId, String rsAccount) {
             this.passphrase = passphrase;
             this.publicKey = publicKey;
             this.accountId = accountId;
             this.rsAccount = rsAccount;
         }
 
-        public Solution(String passphrase, byte[] publicKey, long accountId) {
+        public Solution(String passphrase, java.security.PublicKey publicKey, long accountId) {
             this.passphrase = passphrase;
             this.publicKey = publicKey;
             this.accountId = accountId;
