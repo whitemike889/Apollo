@@ -23,11 +23,13 @@ package com.apollocurrency.aplwallet.apl.http;
 import com.apollocurrency.aplwallet.apl.Account;
 import com.apollocurrency.aplwallet.apl.AplException;
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 
 import javax.servlet.http.HttpServletRequest;
+import java.security.KeyPair;
 
 public final class GetSharedKey extends APIServlet.APIRequestHandler {
 
@@ -53,7 +55,8 @@ public final class GetSharedKey extends APIServlet.APIRequestHandler {
         if (publicKey == null) {
             return JSONResponses.INCORRECT_ACCOUNT;
         }
-        byte[] sharedKey = Crypto.getSharedKey(Crypto.getPrivateKey(secretPhrase), publicKey, nonce);
+        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+        byte[] sharedKey = CryptoComponent.getSharedKeyCalculator().getSharedKey(keyPair.getPrivate(), publicKey, nonce);
         JSONObject response = new JSONObject();
         response.put("sharedKey", Convert.toHexString(sharedKey));
         return response;

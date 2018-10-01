@@ -19,4 +19,16 @@ public class KeyGenerator implements AsymmetricKeyGenerator {
         return new KeyPair(publicKey, privateKey);
     }
 
+    @Override
+    public KeyPair generateFromKeySeed(byte[] keySeed) {
+        java.security.PublicKey publicKey = null;
+        try {
+            publicKey = new PublicKey(Crypto.getPublicKey(keySeed));
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        }
+        java.security.PrivateKey privateKey = new PrivateKey(Crypto.getPrivateKey(keySeed));
+        return new KeyPair(publicKey, privateKey);
+    }
+
 }

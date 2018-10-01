@@ -21,6 +21,7 @@
 package com.apollocurrency.aplwallet.apl;
 
 import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
+import com.apollocurrency.aplwallet.apl.crypto.Utils;
 import com.apollocurrency.aplwallet.apl.crypto.legacy.Crypto;
 import com.apollocurrency.aplwallet.apl.crypto.symmetric.AnonymouslyEncryptedData;
 import com.apollocurrency.aplwallet.apl.db.*;
@@ -564,7 +565,7 @@ public final class Shuffling {
             final byte[] nonce = Convert.toBytes(this.id);
             final List<byte[]> keySeeds = new ArrayList<>();
             java.security.PublicKey nextParticipantPublicKey = Account.getPublicKey(participants.next().getAccountId());
-            byte[] keySeed = Crypto.getKeySeed(secretPhrase, nextParticipantPublicKey, nonce);
+            byte[] keySeed = Utils.calcKeySeed(secretPhrase, CryptoComponent.getPublicKeyEncoder().encode(nextParticipantPublicKey), nonce);
             keySeeds.add(keySeed);
             byte[] publicKey = Crypto.getPublicKey(keySeed);
             byte[] decryptedBytes = null;
@@ -588,7 +589,7 @@ public final class Shuffling {
             // decrypt all iteratively, adding the key seeds to the result
             while (participants.hasNext()) {
                 nextParticipantPublicKey = Account.getPublicKey(participants.next().getAccountId());
-                keySeed = Crypto.getKeySeed(secretPhrase, nextParticipantPublicKey, nonce);
+                keySeed = Utils.calcKeySeed(secretPhrase, CryptoComponent.getPublicKeyEncoder().encode(nextParticipantPublicKey), nonce);
                 keySeeds.add(keySeed);
                 try {
                     AnonymouslyEncryptedData encryptedData = CryptoComponent.getAnonymousDataEncryptor().readEncryptedData(decryptedBytes);

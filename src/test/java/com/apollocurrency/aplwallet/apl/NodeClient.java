@@ -5,6 +5,7 @@
 package com.apollocurrency.aplwallet.apl;
 
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.http.MainnetNodeClientTest;
 import com.apollocurrency.aplwallet.apl.updater.Architecture;
 import com.apollocurrency.aplwallet.apl.updater.DoubleByteArrayTuple;
@@ -32,6 +33,7 @@ import util.TestUtil;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.security.KeyPair;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -326,13 +328,17 @@ public class NodeClient {
         if (transactionsArray == null || serverPublicKey == null) {
             throw new RuntimeException("Cannot find transactions or serverPublic key in json: " + root.toString());
         }
-        byte[] sharedKey = Crypto.getSharedKey(Crypto.getPrivateKey(secretPhrase), Convert.parseHexString(serverPublicKey.textValue()));
+        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+        byte[] sharedKey = CryptoComponent.getSharedKeyCalculator().getSharedKey(
+                keyPair.getPrivate(),
+                CryptoComponent.getPublicKeyEncoder().decode(Convert.parseHexString(serverPublicKey.textValue()))
+        );
         List<JSONTransaction> transactions = new ArrayList<>();
         for (final JsonNode transactionJson: transactionsArray) {
             if (transactionJson.get("encryptedTransaction") != null) {
                 JsonNode encryptedTransaction = transactionJson.get("encryptedTransaction");
                 byte[] encryptedBytes = Convert.parseHexString(encryptedTransaction.textValue());
-                byte[] decryptedData = Crypto.aesDecrypt(encryptedBytes, sharedKey);
+                byte[] decryptedData = CryptoComponent.getSymmetricEncryptor().decrypt(encryptedBytes, sharedKey);
                 String decryptedJson = Convert.toString(decryptedData);
                 JSONTransaction transaction = MAPPER.readValue(decryptedJson, JSONTransaction.class);
                 transactions.add(transaction);

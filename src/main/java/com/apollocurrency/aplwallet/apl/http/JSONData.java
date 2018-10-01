@@ -1271,7 +1271,7 @@ public final class JSONData {
         JSONObject encryptedTransaction = new JSONObject();
         JSONObject transactionJson = JSONData.transaction(false, transaction);
 
-        byte[] encrypted = prepareToAesDecryption(Crypto.aesEncrypt(transactionJson.toJSONString().getBytes(), sharedKey));
+        byte[] encrypted = prepareToAesDecryption(CryptoComponent.getSymmetricEncryptor().encrypt(transactionJson.toJSONString().getBytes(), sharedKey));
 
         encryptedTransaction.put("encryptedTransaction", Convert.toHexString(encrypted));
         return encryptedTransaction;
@@ -1280,7 +1280,7 @@ public final class JSONData {
 
     public static JSONObject encryptedLedgerEntry(JSONObject ledgerEntryJson, byte[] sharedKey) {
         JSONObject encryptedLedgerEntry = new JSONObject();
-        byte[] encrypted = prepareToAesDecryption(Crypto.aesEncrypt(ledgerEntryJson.toJSONString().getBytes(), sharedKey));
+        byte[] encrypted = prepareToAesDecryption(CryptoComponent.getSymmetricEncryptor().encrypt(ledgerEntryJson.toJSONString().getBytes(), sharedKey));
         encryptedLedgerEntry.put("encryptedLedgerEntry", Convert.toHexString(encrypted));
         return encryptedLedgerEntry;
     }
@@ -1294,7 +1294,7 @@ public final class JSONData {
 
     public static JSONObject encryptedUnconfirmedTransaction(Transaction transaction, byte[] sharedKey) {
         JSONObject encryptedUnconfirmedTransaction = new JSONObject();
-        byte[] encrypted = prepareToAesDecryption(Crypto.aesEncrypt(unconfirmedTransaction(transaction).toJSONString().getBytes(), sharedKey));
+        byte[] encrypted = prepareToAesDecryption(CryptoComponent.getSymmetricEncryptor().encrypt(unconfirmedTransaction(transaction).toJSONString().getBytes(), sharedKey));
         encryptedUnconfirmedTransaction.put("encryptedUnconfirmedTransaction", Convert.toHexString(encrypted));
         return encryptedUnconfirmedTransaction;
     }

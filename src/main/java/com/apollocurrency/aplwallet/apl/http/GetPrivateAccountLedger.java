@@ -9,6 +9,7 @@ import com.apollocurrency.aplwallet.apl.AccountLedger.LedgerEntry;
 import com.apollocurrency.aplwallet.apl.AccountLedger.LedgerEvent;
 import com.apollocurrency.aplwallet.apl.AccountLedger.LedgerHolding;
 import com.apollocurrency.aplwallet.apl.AplException;
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -109,7 +110,7 @@ public class GetPrivateAccountLedger extends APIServlet.APIRequestHandler {
 
         JSONObject response = new JSONObject();
         response.put("entries", responseEntries);
-        response.put("serverPublicKey", Convert.toHexString(API.getServerPublicKey()));
+        response.put("serverPublicKey", Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(API.getServerPublicKey())));
         return response;
     }
 }

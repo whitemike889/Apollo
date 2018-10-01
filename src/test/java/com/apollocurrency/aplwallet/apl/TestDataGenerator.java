@@ -5,11 +5,13 @@
 package com.apollocurrency.aplwallet.apl;
 
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.security.KeyPair;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -97,7 +99,7 @@ public class TestDataGenerator {
 
     public static void fundAcc(TestAccount account, TestAccount fundingAcc, long amount) throws Exception {
         JSONTransaction jsonTransaction = client.sendMoneyTransaction(TEST_LOCALHOST, fundingAcc.getSecretPhrase(),
-                Convert.toHexString(account.getPublicKey()),60,
+                Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(account.getPublicKey())),60,
                 Convert.rsAccount(account.getId()), atm(amount), atm(1L));
         LOG.debug("Funding acc: {} -> {}", fundingAcc.getRS(), account.getRS());
         waitForConfirmation(jsonTransaction);
@@ -136,10 +138,10 @@ public class TestDataGenerator {
     }
     public static TestAccount generateAccount(String namePrefix) {
         String secretPhrase = generateSecretPhrase();
-        byte[] publicKey = Crypto.getPublicKey(secretPhrase);
-        long id = Account.getId(publicKey);
-        String name = namePrefix + Crypto.getSecureRandom().nextInt();
-        return new TestAccount(id, publicKey, name, secretPhrase);
+        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+        long id = Account.getId(keyPair.getPublic());
+        String name = namePrefix + CryptoComponent.getSecureRandom().nextInt();
+        return new TestAccount(id, keyPair.getPublic(), name, secretPhrase);
     }
     public static JSONTransaction saveAcc(TestAccount account) throws Exception {
             JSONTransaction jsonTransaction = client.setAccountInfo(TEST_LOCALHOST, account.getName(), account.getSecretPhrase(), 60, atm(1));

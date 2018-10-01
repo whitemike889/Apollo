@@ -48,8 +48,8 @@ public class SimpleTransactionImpl implements Transaction {
     }
 
     @Override
-    public byte[] getSenderPublicKey() {
-        return new byte[0];
+    public java.security.PublicKey getSenderPublicKey() {
+        return null; // TODO check this return value
     }
 
     @Override

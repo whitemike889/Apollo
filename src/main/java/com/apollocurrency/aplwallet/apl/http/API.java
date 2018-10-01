@@ -23,6 +23,7 @@ package com.apollocurrency.aplwallet.apl.http;
 import com.apollocurrency.aplwallet.apl.Apl;
 import com.apollocurrency.aplwallet.apl.Constants;
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import com.apollocurrency.aplwallet.apl.util.ThreadPool;
 import com.apollocurrency.aplwallet.apl.util.UPnP;
@@ -51,6 +52,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.net.*;
 import java.nio.file.Paths;
+import java.security.KeyPair;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -63,8 +65,8 @@ public final class API {
     public static final int TESTNET_API_PORT = 6876;
     public static final int TESTNET_API_SSLPORT = 6877;
     private static final String[] DISABLED_HTTP_METHODS = {"TRACE", "OPTIONS", "HEAD"};
-    private static byte[] privateKey;
-    private static byte[] publicKey;
+    private static java.security.PrivateKey privateKey;
+    private static java.security.PublicKey publicKey;
     public static final int openAPIPort;
     public static final int openAPISSLPort;
     public static final boolean isOpenAPI;
@@ -89,9 +91,10 @@ public final class API {
 
         while (!Thread.currentThread().isInterrupted()) {
             synchronized (API.class) {
-                byte[] seed = Crypto.getSecureRandom().generateSeed(32);
-                privateKey = Crypto.getPrivateKey(seed);
-                publicKey = Crypto.getPublicKey(seed);
+                byte[] seed = CryptoComponent.getSecureRandom().generateSeed(32);
+                KeyPair keyPair = CryptoComponent.getKeyGenerator().generateFromKeySeed(seed);
+                privateKey = keyPair.getPrivate();
+                publicKey = keyPair.getPublic();
             }
             try {
                 TimeUnit.MINUTES.sleep(10);
@@ -102,10 +105,11 @@ public final class API {
         }
     });
 
-    public static synchronized byte[] getServerPublicKey() {
+    public static synchronized java.security.PublicKey getServerPublicKey() {
         return publicKey;
     }
-    public static synchronized byte[] getServerPrivateKey() {
+
+    public static synchronized java.security.PrivateKey getServerPrivateKey() {
         return privateKey;
     }
 

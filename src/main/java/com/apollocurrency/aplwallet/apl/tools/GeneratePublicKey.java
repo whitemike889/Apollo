@@ -21,6 +21,7 @@
 package com.apollocurrency.aplwallet.apl.tools;
 
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.slf4j.Logger;
 
@@ -28,6 +29,7 @@ import java.io.BufferedReader;
 import java.io.Console;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.security.KeyPair;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -60,7 +62,7 @@ public class GeneratePublicKey {
     }
 
     private static void printPublicKey(String secretPhrase) {
-        byte[] publicKey = Crypto.getPublicKey(secretPhrase);
-        System.out.println(Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(publicKey)));
+        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+        System.out.println(Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(keyPair.getPublic())));
     }
 }

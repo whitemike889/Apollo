@@ -24,10 +24,12 @@ import com.apollocurrency.aplwallet.apl.Account;
 import com.apollocurrency.aplwallet.apl.FundingMonitor;
 import com.apollocurrency.aplwallet.apl.HoldingType;
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 
 import javax.servlet.http.HttpServletRequest;
+import java.security.KeyPair;
 
 /**
  * Stop a funding monitor
@@ -75,12 +77,13 @@ public class StopFundingMonitor extends APIServlet.APIRequestHandler {
         }
         if (secretPhrase != null || accountId != 0) {
             if (secretPhrase != null) {
+                KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
                 if (accountId != 0) {
-                    if (Account.getId(Crypto.getPublicKey(secretPhrase)) != accountId) {
+                    if (Account.getId(keyPair.getPublic()) != accountId) {
                         return JSONResponses.INCORRECT_ACCOUNT;
                     }
                 } else {
-                    accountId = Account.getId(Crypto.getPublicKey(secretPhrase));
+                    accountId = Account.getId(keyPair.getPublic());
                 }
             }
             HoldingType holdingType = ParameterParser.getHoldingType(req);

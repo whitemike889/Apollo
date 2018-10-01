@@ -1,6 +1,5 @@
 package com.apollocurrency.aplwallet.apl.crypto;
 
-
 import com.apollocurrency.aplwallet.apl.crypto.asymmetric.AsymmetricKeyGenerator;
 import com.apollocurrency.aplwallet.apl.crypto.asymmetric.PublicKeyEncoder;
 import com.apollocurrency.aplwallet.apl.crypto.asymmetric.SharedKeyCalculator;
@@ -8,12 +7,17 @@ import com.apollocurrency.aplwallet.apl.crypto.asymmetric.signature.Signer;
 import com.apollocurrency.aplwallet.apl.crypto.legacy.AnonymousDataEncryptor;
 import com.apollocurrency.aplwallet.apl.crypto.legacy.KeyGenerator;
 import com.apollocurrency.aplwallet.apl.crypto.symmetric.DataEncryptor;
+import com.apollocurrency.aplwallet.apl.crypto.symmetric.SymmetricEncryptor;
+
+import java.security.SecureRandom;
 
 /**
  * Class to configure crypto-components
  * Add cryptography related components here
  */
 public class CryptoComponent {
+
+    private static SecureRandom secureRandom = new SecureRandom();
 
     private static final PublicKeyEncoder PUBLIC_KEY_ENCODER_INSTANCE = new com.apollocurrency.aplwallet.apl.crypto.legacy.PublicKeyEncoder();
     private static final AsymmetricKeyGenerator ASYMMETRIC_KEY_GENERATOR = new KeyGenerator();
@@ -22,6 +26,11 @@ public class CryptoComponent {
     private static final DigestCalculator DIGEST_CALCULATOR = new com.apollocurrency.aplwallet.apl.crypto.legacy.DigestCalculator();
     private static final DataEncryptor DATA_ENCRYPTOR = new com.apollocurrency.aplwallet.apl.crypto.legacy.DataEncryptor();
     private static final AnonymousDataEncryptor ANONYMOUS_DATA_ENCRYPTOR = new com.apollocurrency.aplwallet.apl.crypto.legacy.AnonymousDataEncryptor();
+    private static final SymmetricEncryptor SYMMETRIC_ENCRYPTOR = new com.apollocurrency.aplwallet.apl.crypto.legacy.SymmetricEncryptor();
+
+    public static SecureRandom getSecureRandom() {
+        return secureRandom;
+    }
 
     public static PublicKeyEncoder getPublicKeyEncoder() {
         return PUBLIC_KEY_ENCODER_INSTANCE;
@@ -49,6 +58,10 @@ public class CryptoComponent {
 
     public static AnonymousDataEncryptor getAnonymousDataEncryptor() {
         return ANONYMOUS_DATA_ENCRYPTOR;
+    }
+
+    public static SymmetricEncryptor getSymmetricEncryptor() {
+        return SYMMETRIC_ENCRYPTOR;
     }
 
 }

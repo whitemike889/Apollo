@@ -804,7 +804,7 @@ public final class ParameterParser {
             return null;
         }
         long accountId = Account.getId(publicKey);
-        byte[] sharedKey = Crypto.getSharedKey(API.getServerPrivateKey(), publicKey);
+        byte[] sharedKey = CryptoComponent.getSharedKeyCalculator().getSharedKey(API.getServerPrivateKey(), publicKey);
         return new PrivateTransactionsAPIData(encrypt, publicKey, sharedKey, accountId);
     }
     private ParameterParser() {} // never

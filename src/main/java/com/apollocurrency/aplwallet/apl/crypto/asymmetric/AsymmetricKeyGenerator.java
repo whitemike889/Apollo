@@ -8,5 +8,6 @@ import java.security.KeyPair;
 public interface AsymmetricKeyGenerator {
 
     KeyPair generateKeyPair(String secretPhrase);
+    KeyPair generateFromKeySeed(byte[] keySeed);
 
 }

@@ -22,6 +22,7 @@ package com.apollocurrency.aplwallet.apl;
 
 import com.apollocurrency.aplwallet.apl.addons.AddOns;
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.env.DirProvider;
 import com.apollocurrency.aplwallet.apl.env.RuntimeEnvironment;
 import com.apollocurrency.aplwallet.apl.env.RuntimeMode;
@@ -531,14 +532,14 @@ public final class Apl {
     }
 
     private static Thread initSecureRandom() {
-        Thread secureRandomInitThread = new Thread(() -> Crypto.getSecureRandom().nextBytes(new byte[1024]));
+        Thread secureRandomInitThread = new Thread(() -> CryptoComponent.getSecureRandom().nextBytes(new byte[1024]));
         secureRandomInitThread.setDaemon(true);
         secureRandomInitThread.start();
         return secureRandomInitThread;
     }
 
     private static void testSecureRandom() {
-        Thread thread = new Thread(() -> Crypto.getSecureRandom().nextBytes(new byte[1024]));
+        Thread thread = new Thread(() -> CryptoComponent.getSecureRandom().nextBytes(new byte[1024]));
         thread.setDaemon(true);
         thread.start();
         try {

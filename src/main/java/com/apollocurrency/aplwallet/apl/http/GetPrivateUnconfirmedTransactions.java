@@ -7,6 +7,7 @@ package com.apollocurrency.aplwallet.apl.http;
 import com.apollocurrency.aplwallet.apl.Apl;
 import com.apollocurrency.aplwallet.apl.Transaction;
 import com.apollocurrency.aplwallet.apl.TransactionType;
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.db.FilteringIterator;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.json.simple.JSONArray;
@@ -55,7 +56,7 @@ public final class GetPrivateUnconfirmedTransactions extends APIServlet.APIReque
         }
         JSONObject response = new JSONObject();
         response.put("unconfirmedTransactions", transactions);
-        response.put("serverPublicKey", Convert.toHexString(API.getServerPublicKey()));
+        response.put("serverPublicKey", Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(API.getServerPublicKey())));
         return response;
     }
 

@@ -40,7 +40,7 @@ public class JSONTransaction implements Transaction {
     public long getSenderId() {return transaction.getSenderId();}
 
     @Override
-    public byte[] getSenderPublicKey() {return transaction.getSenderPublicKey();}
+    public java.security.PublicKey getSenderPublicKey() {return transaction.getSenderPublicKey();}
 
     @Override
     public long getRecipientId() {return transaction.getRecipientId();}

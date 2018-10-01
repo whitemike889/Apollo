@@ -7,6 +7,7 @@ package com.apollocurrency.aplwallet.apl.http;
 import com.apollocurrency.aplwallet.apl.AccountLedger;
 import com.apollocurrency.aplwallet.apl.AccountLedger.LedgerEntry;
 import com.apollocurrency.aplwallet.apl.AplException;
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
@@ -66,7 +67,7 @@ public class GetPrivateAccountLedgerEntry extends APIServlet.APIRequestHandler {
         JSONData.ledgerEntry(response, ledgerEntry, includeTransaction, includeHoldingInfo);
         if (data.isEncrypt()) {
             response = JSONData.encryptedLedgerEntry(response, data.getSharedKey());
-            response.put("serverPublicKey", Convert.toHexString(API.getServerPublicKey()));
+            response.put("serverPublicKey", Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(API.getServerPublicKey())));
         }
         return response;
     }

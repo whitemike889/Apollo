@@ -22,7 +22,7 @@ public class DataEncryptor implements com.apollocurrency.aplwallet.apl.crypto.sy
             return EMPTY_DATA;
         }
         byte[] nonce = new byte[32];
-        Crypto.getSecureRandom().nextBytes(nonce);
+        RandomProvider.getSecureRandom().nextBytes(nonce);
         byte[] sharedKey = Crypto.getSharedKey(Crypto.getPrivateKey(secretPhrase), theirPublicKey.getEncoded(), nonce);
         byte[] data = Crypto.aesEncrypt(plaintext, sharedKey);
         return new com.apollocurrency.aplwallet.apl.crypto.legacy.EncryptedData(data, nonce);

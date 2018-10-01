@@ -82,7 +82,7 @@ public final class GetDGSPurchase extends APIServlet.APIRequestHandler {
                             decrypted = Account.decryptFrom(publicKey, purchase.getEncryptedGoods(), secretPhrase, true);
                         }
                     } else {
-                        decrypted = Crypto.aesDecrypt(purchase.getEncryptedGoods().getData(), sharedKey);
+                        decrypted = CryptoComponent.getSymmetricEncryptor().decrypt(purchase.getEncryptedGoods().getData(), sharedKey);
                         decrypted = Convert.uncompress(decrypted);
                     }
                 }

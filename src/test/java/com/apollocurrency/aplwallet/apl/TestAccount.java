@@ -6,27 +6,31 @@ package com.apollocurrency.aplwallet.apl;
 
 
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 
+import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class TestAccount {
     private long id;
-    private byte[] publicKey;
+    private java.security.PublicKey publicKey;
     private String name;
     private String secretPhrase;
     private List<JSONTransaction> transactions = new ArrayList<>();
 
-    public TestAccount(long id, byte[] publicKey, String name, String secretPhrase) {
+    public TestAccount(long id, java.security.PublicKey publicKey, String name, String secretPhrase) {
         this.id = id;
         this.publicKey = publicKey;
         this.name = name;
         this.secretPhrase = secretPhrase;
     }
+
     public TestAccount(String secretPhrase) {
-        this.publicKey = Crypto.getPublicKey(secretPhrase);
+        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+        this.publicKey = keyPair.getPublic();
         this.id = Account.getId(publicKey);
         this.name = "";
         this.secretPhrase = secretPhrase;
@@ -40,7 +44,8 @@ public class TestAccount {
     public String getRS() {
         return Convert.rsAccount(getId());
     }
-    public byte[] getPublicKey() {
+
+    public java.security.PublicKey getPublicKey() {
         return publicKey;
     }
 

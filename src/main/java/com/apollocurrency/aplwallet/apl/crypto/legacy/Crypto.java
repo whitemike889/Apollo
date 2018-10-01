@@ -20,7 +20,6 @@
 
 package com.apollocurrency.aplwallet.apl.crypto.legacy;
 
-import com.apollocurrency.aplwallet.apl.Apl;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -36,35 +35,15 @@ import org.slf4j.Logger;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.Arrays;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
 public final class Crypto {
-        private static final Logger LOG = getLogger(Crypto.class);
 
-    private static final boolean useStrongSecureRandom = Apl.getBooleanProperty("apl.useStrongSecureRandom");
-
-    private static final ThreadLocal<SecureRandom> secureRandom = new ThreadLocal<SecureRandom>() {
-        @Override
-        protected SecureRandom initialValue() {
-            try {
-                SecureRandom secureRandom = useStrongSecureRandom ? SecureRandom.getInstanceStrong() : new SecureRandom();
-                secureRandom.nextBoolean();
-                return secureRandom;
-            } catch (NoSuchAlgorithmException e) {
-                LOG.error("No secure random provider available");
-                throw new RuntimeException(e.getMessage(), e);
-            }
-        }
-    };
+    private static final Logger LOG = getLogger(Crypto.class);
 
     private Crypto() {} //never
-
-    public static SecureRandom getSecureRandom() {
-        return secureRandom.get();
-    }
 
     public static MessageDigest getMessageDigest(String algorithm) {
         try {
@@ -87,7 +66,8 @@ public final class Crypto {
         return new Keccak.Digest256();
     }
 
-    public static byte[] getKeySeed(String secretPhrase, byte[]... nonces) {
+
+    public static byte[] calcKeySeed(String secretPhrase, byte[]... nonces) {
         MessageDigest digest = Crypto.sha256();
         digest.update(Convert.toBytes(secretPhrase));
         for (byte[] nonce : nonces) {
@@ -236,28 +216,9 @@ public final class Crypto {
     public static byte[] aesEncrypt(byte[] plaintext, byte[] key) {
         try {
             byte[] iv = new byte[16];
-            secureRandom.get().nextBytes(iv);
+            RandomProvider.getSecureRandom().nextBytes(iv);
             PaddedBufferedBlockCipher aes = new PaddedBufferedBlockCipher(new CBCBlockCipher(
                     new AESEngine()));
-            CipherParameters ivAndKey = new ParametersWithIV(new KeyParameter(key), iv);
-            aes.init(true, ivAndKey);
-            byte[] output = new byte[aes.getOutputSize(plaintext.length)];
-            int ciphertextLength = aes.processBytes(plaintext, 0, plaintext.length, output, 0);
-            ciphertextLength += aes.doFinal(output, ciphertextLength);
-            byte[] result = new byte[iv.length + ciphertextLength];
-            System.arraycopy(iv, 0, result, 0, iv.length);
-            System.arraycopy(output, 0, result, iv.length, ciphertextLength);
-            return result;
-        } catch (InvalidCipherTextException e) {
-            throw new RuntimeException(e.getMessage(), e);
-        }
-    }
-
-    public static byte[] aesGCMEncrypt(byte[] plaintext, byte[] key) {
-        try {
-            byte[] iv = new byte[16];
-            secureRandom.get().nextBytes(iv);
-            GCMBlockCipher aes = new GCMBlockCipher(new AESEngine());
             CipherParameters ivAndKey = new ParametersWithIV(new KeyParameter(key), iv);
             aes.init(true, ivAndKey);
             byte[] output = new byte[aes.getOutputSize(plaintext.length)];
@@ -288,6 +249,26 @@ public final class Crypto {
             plaintextLength += aes.doFinal(output, plaintextLength);
             byte[] result = new byte[plaintextLength];
             System.arraycopy(output, 0, result, 0, result.length);
+            return result;
+        } catch (InvalidCipherTextException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
+
+    public static byte[] aesGCMEncrypt(byte[] plaintext, byte[] key) {
+        try {
+            byte[] iv = new byte[16];
+            RandomProvider.getSecureRandom().nextBytes(iv);
+            GCMBlockCipher aes = new GCMBlockCipher(new AESEngine());
+            CipherParameters ivAndKey = new ParametersWithIV(new KeyParameter(key), iv);
+            aes.init(true, ivAndKey);
+            byte[] output = new byte[aes.getOutputSize(plaintext.length)];
+            int ciphertextLength = aes.processBytes(plaintext, 0, plaintext.length, output, 0);
+            ciphertextLength += aes.doFinal(output, ciphertextLength);
+            byte[] result = new byte[iv.length + ciphertextLength];
+            System.arraycopy(iv, 0, result, 0, iv.length);
+            System.arraycopy(output, 0, result, iv.length, ciphertextLength);
             return result;
         } catch (InvalidCipherTextException e) {
             throw new RuntimeException(e.getMessage(), e);

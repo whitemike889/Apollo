@@ -8,6 +8,7 @@ import com.apollocurrency.aplwallet.apl.Apl;
 import com.apollocurrency.aplwallet.apl.AplException;
 import com.apollocurrency.aplwallet.apl.Transaction;
 import com.apollocurrency.aplwallet.apl.TransactionType;
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
@@ -79,7 +80,7 @@ public final class GetPrivateTransaction extends APIServlet.APIRequestHandler {
                 response = JSONData.transaction(transaction, false, false);
             }
         }
-        response.put("serverPublicKey", Convert.toHexString(API.getServerPublicKey()));
+        response.put("serverPublicKey", Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(API.getServerPublicKey())));
         return response;
     }
 }

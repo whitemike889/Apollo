@@ -6,6 +6,7 @@ package com.apollocurrency.aplwallet.apl.http;
 
 import com.apollocurrency.aplwallet.apl.*;
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import com.apollocurrency.aplwallet.apl.updater.Architecture;
 import com.apollocurrency.aplwallet.apl.updater.DoubleByteArrayTuple;
 import com.apollocurrency.aplwallet.apl.updater.Platform;
@@ -22,6 +23,7 @@ import util.TestUtil;
 import util.WalletRunner;
 
 import java.io.IOException;
+import java.security.KeyPair;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -253,7 +255,8 @@ public class TestnetNodeClientTest extends AbstractNodeClientTest {
     @Test
     public void testGetEncryptedPrivateBlockTransactions() throws Exception {
         String secretPhrase = accounts.get(PRIVATE_TRANSACTION_SENDER);
-        byte[] publicKey = Crypto.getPublicKey(secretPhrase);
+        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+        java.security.PublicKey publicKey = keyPair.getPublic();
         List<JSONTransaction> transactionsList = client.getEncryptedPrivateBlockchainTransactionsList(url, PRIVATE_BLOCK_HEIGHT, null, null, secretPhrase, Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(publicKey)));
         checkList(transactionsList);
         Assert.assertEquals(4, transactionsList.size());
@@ -276,7 +279,8 @@ public class TestnetNodeClientTest extends AbstractNodeClientTest {
     @Test
     public void testGetEncryptedPrivateBlockchainTransactionsWithPagination() throws Exception {
         String secretPhrase = accounts.get(PRIVATE_TRANSACTION_SENDER);
-        byte[] publicKey = Crypto.getPublicKey(secretPhrase);
+        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+        java.security.PublicKey publicKey = keyPair.getPublic();
         List<JSONTransaction> transactionsList1 = client.getEncryptedPrivateBlockchainTransactionsList(url, -1, 5L, 9L, secretPhrase,
                 Convert.toHexString(CryptoComponent.getPublicKeyEncoder().encode(publicKey)));
         checkList(transactionsList1);

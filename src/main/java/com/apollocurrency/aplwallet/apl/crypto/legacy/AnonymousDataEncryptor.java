@@ -19,7 +19,7 @@ public class AnonymousDataEncryptor implements com.apollocurrency.aplwallet.apl.
         if (!(theirPublicKey instanceof com.apollocurrency.aplwallet.apl.crypto.legacy.PublicKey)) {
             throw new InvalidKeyException("Invalid key format. Check crypto config");
         }
-        byte[] keySeed = Crypto.getKeySeed(secretPhrase, theirPublicKey.getEncoded(), nonce);
+        byte[] keySeed = Crypto.calcKeySeed(secretPhrase, theirPublicKey.getEncoded(), nonce);
         byte[] myPrivateKey = Crypto.getPrivateKey(keySeed);
         byte[] myPublicKey = Crypto.getPublicKey(keySeed);
         byte[] sharedKey = Crypto.getSharedKey(myPrivateKey, theirPublicKey.getEncoded());

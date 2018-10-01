@@ -24,11 +24,14 @@ import com.apollocurrency.aplwallet.apl.Account;
 import com.apollocurrency.aplwallet.apl.Generator;
 import com.apollocurrency.aplwallet.apl.Apl;
 
+import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONStreamAware;
 
 import javax.servlet.http.HttpServletRequest;
+
+import java.security.KeyPair;
 
 import static com.apollocurrency.aplwallet.apl.http.JSONResponses.NOT_FORGING;
 import static com.apollocurrency.aplwallet.apl.http.JSONResponses.UNKNOWN_ACCOUNT;
@@ -54,7 +57,8 @@ public final class GetForging extends APIServlet.APIRequestHandler {
         String secretPhrase = ParameterParser.getSecretPhrase(req, false);
         int elapsedTime = Apl.getEpochTime() - Apl.getBlockchain().getLastBlock().getTimestamp();
         if (secretPhrase != null) {
-            Account account = Account.getAccount(Crypto.getPublicKey(secretPhrase));
+            KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+            Account account = Account.getAccount(keyPair.getPublic());
             if (account == null) {
                 return UNKNOWN_ACCOUNT;
             }
