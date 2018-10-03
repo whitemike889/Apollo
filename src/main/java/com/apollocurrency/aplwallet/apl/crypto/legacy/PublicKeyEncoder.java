@@ -1,7 +1,5 @@
 package com.apollocurrency.aplwallet.apl.crypto.legacy;
 
-import com.apollocurrency.aplwallet.apl.AplException;
-
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
 import java.security.PublicKey;
@@ -10,6 +8,9 @@ public class PublicKeyEncoder extends com.apollocurrency.aplwallet.apl.crypto.as
 
     @Override
     public byte[] encode(PublicKey key) {
+        if(key == null) {
+            return null;
+        }
         if(!com.apollocurrency.aplwallet.apl.crypto.legacy.PublicKey.FORMAT.equals(key.getFormat())) {
             throw new InvalidParameterException("Invalid public key format. Check crypto config");
         }
@@ -18,6 +19,9 @@ public class PublicKeyEncoder extends com.apollocurrency.aplwallet.apl.crypto.as
 
     @Override
     public PublicKey decode(byte[] bytes) {
+        if(bytes == null) {
+            return null;
+        }
         if(bytes.length != getEncodedLength()) {
             throw new InvalidParameterException("Invalid public key format. Check crypto config");
         }
@@ -27,7 +31,6 @@ public class PublicKeyEncoder extends com.apollocurrency.aplwallet.apl.crypto.as
             e.printStackTrace();
             return null; // TODO check this
         }
-
     }
 
     @Override

@@ -27,4 +27,18 @@ public class PrivateKey implements java.security.PrivateKey{
     public byte[] getEncoded() {
         return Arrays.copyOf(key, key.length);
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PrivateKey that = (PrivateKey) o;
+        return Arrays.equals(key, that.key);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(key);
+    }
+
 }
