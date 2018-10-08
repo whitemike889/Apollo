@@ -56,7 +56,7 @@ public final class GetSharedKey extends APIServlet.APIRequestHandler {
             return JSONResponses.INCORRECT_ACCOUNT;
         }
         KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
-        byte[] sharedKey = CryptoComponent.getSharedKeyCalculator().getSharedKey(keyPair.getPrivate(), publicKey, nonce);
+        byte[] sharedKey = CryptoComponent.getSharedKeyCalculator().getSharedKey(keyPair.getPublic(), keyPair.getPrivate(), publicKey, nonce);
         JSONObject response = new JSONObject();
         response.put("sharedKey", Convert.toHexString(sharedKey));
         return response;

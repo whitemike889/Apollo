@@ -330,6 +330,7 @@ public class NodeClient {
         }
         KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
         byte[] sharedKey = CryptoComponent.getSharedKeyCalculator().getSharedKey(
+                keyPair.getPublic(),
                 keyPair.getPrivate(),
                 CryptoComponent.getPublicKeyEncoder().decode(Convert.parseHexString(serverPublicKey.textValue()))
         );

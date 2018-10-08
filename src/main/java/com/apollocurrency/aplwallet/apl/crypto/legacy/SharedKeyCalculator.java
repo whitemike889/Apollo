@@ -6,12 +6,12 @@ import java.security.PublicKey;
 public class SharedKeyCalculator implements com.apollocurrency.aplwallet.apl.crypto.asymmetric.SharedKeyCalculator {
 
     @Override
-    public byte[] getSharedKey(PrivateKey myPrivateKey, PublicKey theirPublicKey) {
+    public byte[] getSharedKey(PublicKey myPublicKey, PrivateKey myPrivateKey, PublicKey theirPublicKey) {
         return Crypto.getSharedKey(myPrivateKey.getEncoded(), theirPublicKey.getEncoded());
     }
 
     @Override
-    public byte[] getSharedKey(PrivateKey myPrivateKey, PublicKey theirPublicKey, byte[] nonce) {
+    public byte[] getSharedKey(PublicKey myPublicKey, PrivateKey myPrivateKey, PublicKey theirPublicKey, byte[] nonce) {
         return Crypto.getSharedKey(myPrivateKey.getEncoded(), theirPublicKey.getEncoded(), nonce);
     }
 
