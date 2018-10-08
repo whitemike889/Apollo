@@ -43,6 +43,7 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.eclipse.jetty.util.security.Constraint;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.eclipse.jetty.server.ResourceService;
 import org.slf4j.Logger;
 
 import javax.servlet.*;
@@ -228,11 +229,11 @@ public final class API {
             ServletContextHandler apiHandler = new ServletContextHandler();
             String apiResourceBase = Apl.getStringProperty("apl.apiResourceBase");
             if (apiResourceBase != null) {
-                ServletHolder defaultServletHolder = new ServletHolder(new DefaultServlet());
+                ServletHolder defaultServletHolder = new ServletHolder(new DefaultServlet(new WebResourceService()));
                 defaultServletHolder.setInitParameter("dirAllowed", "false");
                 defaultServletHolder.setInitParameter("resourceBase", apiResourceBase);
                 defaultServletHolder.setInitParameter("welcomeServlets", "true");
-                defaultServletHolder.setInitParameter("redirectWelcome", "true");
+                defaultServletHolder.setInitParameter("redirectWelcome", "false");
                 defaultServletHolder.setInitParameter("gzip", "true");
                 defaultServletHolder.setInitParameter("etags", "true");
                 apiHandler.addServlet(defaultServletHolder, "/*");

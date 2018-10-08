@@ -25,8 +25,8 @@
 
         <!--Web-->
         <servlet-api.version>3.1.0</servlet-api.version>
-        <jetty.version>9.3.22.v20171030</jetty.version>
-        <websocket.version>9.3.22.v20171030</websocket.version>
+        <jetty.version>9.4.12.v20180830</jetty.version>
+        <websocket.version>9.4.12.v20180830</websocket.version>
 
         <!--Crypto-->
         <bcprov.version>1.54</bcprov.version>
