@@ -229,7 +229,7 @@ public final class API {
             ServletContextHandler apiHandler = new ServletContextHandler();
             String apiResourceBase = Apl.getStringProperty("apl.apiResourceBase");
             if (apiResourceBase != null) {
-                ServletHolder defaultServletHolder = new ServletHolder(new DefaultServlet(new WebResourceService()));
+                ServletHolder defaultServletHolder = new ServletHolder(new DefaultServlet());
                 defaultServletHolder.setInitParameter("dirAllowed", "false");
                 defaultServletHolder.setInitParameter("resourceBase", apiResourceBase);
                 defaultServletHolder.setInitParameter("welcomeServlets", "true");
