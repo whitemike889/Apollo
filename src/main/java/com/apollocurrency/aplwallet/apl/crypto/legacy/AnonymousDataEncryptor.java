@@ -1,6 +1,7 @@
 package com.apollocurrency.aplwallet.apl.crypto.legacy;
 
 import com.apollocurrency.aplwallet.apl.AplException;
+import com.apollocurrency.aplwallet.apl.crypto.symmetric.AnonymouslyEncryptedData;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -11,7 +12,7 @@ public class AnonymousDataEncryptor implements com.apollocurrency.aplwallet.apl.
 
     @Override
     public AnonymouslyEncryptedData createEncryptedData(byte[] encrypted, PublicKey publicKey) throws InvalidKeyException {
-        return new AnonymouslyEncryptedData(encrypted, publicKey);
+        return new com.apollocurrency.aplwallet.apl.crypto.legacy.AnonymouslyEncryptedData(encrypted, publicKey);
     }
 
     @Override
@@ -24,7 +25,7 @@ public class AnonymousDataEncryptor implements com.apollocurrency.aplwallet.apl.
         byte[] myPublicKey = Crypto.getPublicKey(keySeed);
         byte[] sharedKey = Crypto.getSharedKey(myPrivateKey, theirPublicKey.getEncoded());
         byte[] data = Crypto.aesGCMEncrypt(plaintext, sharedKey);
-        return new AnonymouslyEncryptedData(data, new com.apollocurrency.aplwallet.apl.crypto.legacy.PublicKey(myPublicKey));
+        return new com.apollocurrency.aplwallet.apl.crypto.legacy.AnonymouslyEncryptedData(data, new com.apollocurrency.aplwallet.apl.crypto.legacy.PublicKey(myPublicKey));
     }
 
     @Override
@@ -36,7 +37,7 @@ public class AnonymousDataEncryptor implements com.apollocurrency.aplwallet.apl.
         buffer.get(data);
         byte[] publicKey = new byte[32];
         buffer.get(publicKey);
-        return new AnonymouslyEncryptedData(data, new com.apollocurrency.aplwallet.apl.crypto.legacy.PublicKey(publicKey));
+        return new com.apollocurrency.aplwallet.apl.crypto.legacy.AnonymouslyEncryptedData(data, new com.apollocurrency.aplwallet.apl.crypto.legacy.PublicKey(publicKey));
     }
 
     @Override

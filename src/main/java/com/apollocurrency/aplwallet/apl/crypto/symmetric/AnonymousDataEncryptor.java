@@ -1,7 +1,6 @@
 package com.apollocurrency.aplwallet.apl.crypto.symmetric;
 
 import com.apollocurrency.aplwallet.apl.AplException;
-import com.apollocurrency.aplwallet.apl.crypto.legacy.AnonymouslyEncryptedData;
 
 import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;

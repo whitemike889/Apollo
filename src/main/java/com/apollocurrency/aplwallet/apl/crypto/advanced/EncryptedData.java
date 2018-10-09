@@ -1,6 +1,5 @@
 package com.apollocurrency.aplwallet.apl.crypto.advanced;
 
-import io.firstbridge.cryptolib.FBCryptoParams;
 import io.firstbridge.cryptolib.dataformat.AEAD;
 import io.firstbridge.cryptolib.dataformat.AEADMessage;
 import io.firstbridge.cryptolib.exception.CryptoNotValidException;
