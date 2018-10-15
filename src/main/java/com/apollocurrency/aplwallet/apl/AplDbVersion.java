@@ -667,6 +667,36 @@ class AplDbVersion extends DbVersion {
                 PublicKeyMigration.init();
                 apply(null);
             case 242:
+                apply("ALTER TABLE block ALTER COLUMN previous_block_hash VARBINARY");
+            case 243:
+                apply("ALTER TABLE block ALTER COLUMN payload_hash VARBINARY");
+            case 244:
+                apply("ALTER TABLE block ALTER COLUMN generation_signature VARBINARY");
+            case 245:
+                apply("ALTER TABLE block ALTER COLUMN block_signature VARBINARY");
+            case 246:
+                apply("ALTER TABLE transaction ALTER COLUMN full_hash VARBINARY");
+            case 247:
+                apply("ALTER TABLE transaction ALTER COLUMN referenced_transaction_full_hash VARBINARY");
+            case 248:
+                apply("ALTER TABLE transaction ALTER COLUMN signature VARBINARY");
+            case 249:
+                apply("ALTER TABLE purchase ALTER COLUMN nonce VARBINARY");
+            case 250:
+                apply("ALTER TABLE purchase ALTER COLUMN goods_nonce VARBINARY");
+            case 251:
+                apply("ALTER TABLE purchase ALTER COLUMN refund_nonce VARBINARY");
+            case 252:
+                apply("ALTER TABLE purchase_feedback ALTER COLUMN feedback_nonce VARBINARY");
+            case 253:
+                apply("ALTER TABLE public_key ALTER COLUMN public_key VARBINARY");
+            case 254:
+                apply("ALTER TABLE shuffling_participant ALTER COLUMN data_transaction_full_hash VARBINARY");
+            case 255:
+                apply("ALTER TABLE phasing_poll_linked_transaction ALTER COLUMN linked_full_hash VARBINARY");
+            case 256:
+                apply("ALTER TABLE genesis_public_key ALTER COLUMN public_key VARBINARY");
+            case 257:
                 return;
             default:
                 throw new RuntimeException("Blockchain database inconsistent with code, at update " + nextUpdate

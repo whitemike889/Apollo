@@ -604,6 +604,23 @@ final class TransactionImpl implements Transaction {
         return Arrays.copyOf(bytes(), bytes.length);
     }
 
+    private int getSize() {
+        return signatureOffset() + CryptoComponent.getSigner().getSignatureLength()  + 4 + 4 + 8 + appendagesSize;
+    }
+
+    private int signatureOffset() {
+        return
+                1 /* type.getType() */ +
+                1 /* version */ +
+                4 /* timestamp */ +
+                2 /* deadline */ +
+                CryptoComponent.getPublicKeyEncoder().getEncodedLength() /* getSenderPublicKey */ +
+                8 /* recipientId */ +
+                8 /* amountATM */ +
+                8 /* feeATM */ +
+                CryptoComponent.getDigestCalculator().getCalculatedLength() /* referencedTransactionFullHash */;
+    }
+
     byte[] bytes() {
         if (bytes == null) {
             try {
@@ -659,7 +676,7 @@ final class TransactionImpl implements Transaction {
             byte[] referencedTransactionFullHash = new byte[CryptoComponent.getDigestCalculator().getCalculatedLength()];
             buffer.get(referencedTransactionFullHash);
             referencedTransactionFullHash = Convert.emptyToNull(referencedTransactionFullHash);
-            byte[] signature = new byte[64];
+            byte[] signature = new byte[CryptoComponent.getSigner().getSignatureLength()];
             buffer.get(signature);
             signature = Convert.emptyToNull(signature);
             int flags = 0;
@@ -892,10 +909,6 @@ final class TransactionImpl implements Transaction {
         return hasValidSignature;
     }
 
-    private int getSize() {
-        return signatureOffset() + 64  + 4 + 4 + 8 + appendagesSize;
-    }
-
     @Override
     public int getFullSize() {
         int fullSize = getSize() - appendagesSize;
@@ -905,13 +918,9 @@ final class TransactionImpl implements Transaction {
         return fullSize;
     }
 
-    private int signatureOffset() {
-        return 1 + 1 + 4 + 2 + 32 + 8 + 8 + 8 + 32;
-    }
-
     private byte[] zeroSignature(byte[] data) {
         int start = signatureOffset();
-        for (int i = start; i < start + 64; i++) {
+        for (int i = start; i < start + CryptoComponent.getSigner().getSignatureLength(); i++) {
             data[i] = 0;
         }
         return data;

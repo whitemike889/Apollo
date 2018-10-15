@@ -1,11 +1,11 @@
 package com.apollocurrency.aplwallet.apl.crypto;
 
+import com.apollocurrency.aplwallet.apl.crypto.advanced.AdvancedCryptography;
 import com.apollocurrency.aplwallet.apl.crypto.asymmetric.AsymmetricKeyGenerator;
 import com.apollocurrency.aplwallet.apl.crypto.asymmetric.PublicKeyEncoder;
 import com.apollocurrency.aplwallet.apl.crypto.asymmetric.SharedKeyCalculator;
 import com.apollocurrency.aplwallet.apl.crypto.asymmetric.signature.Signer;
-import com.apollocurrency.aplwallet.apl.crypto.legacy.AnonymousDataEncryptor;
-import com.apollocurrency.aplwallet.apl.crypto.legacy.KeyGenerator;
+import com.apollocurrency.aplwallet.apl.crypto.symmetric.AnonymousDataEncryptor;
 import com.apollocurrency.aplwallet.apl.crypto.symmetric.DataEncryptor;
 import com.apollocurrency.aplwallet.apl.crypto.symmetric.SymmetricEncryptor;
 
@@ -17,51 +17,42 @@ import java.security.SecureRandom;
  */
 public class CryptoComponent {
 
-    private static SecureRandom secureRandom = new SecureRandom();
-
-    private static final PublicKeyEncoder PUBLIC_KEY_ENCODER_INSTANCE = new com.apollocurrency.aplwallet.apl.crypto.legacy.PublicKeyEncoder();
-    private static final AsymmetricKeyGenerator ASYMMETRIC_KEY_GENERATOR = new KeyGenerator();
-    private static final Signer SIGNER = new com.apollocurrency.aplwallet.apl.crypto.legacy.Signer();
-    private static final SharedKeyCalculator SHARED_KEY_CALCULATOR = new com.apollocurrency.aplwallet.apl.crypto.legacy.SharedKeyCalculator();
-    private static final DigestCalculator DIGEST_CALCULATOR = new com.apollocurrency.aplwallet.apl.crypto.legacy.DigestCalculator();
-    private static final DataEncryptor DATA_ENCRYPTOR = new com.apollocurrency.aplwallet.apl.crypto.legacy.DataEncryptor();
-    private static final AnonymousDataEncryptor ANONYMOUS_DATA_ENCRYPTOR = new com.apollocurrency.aplwallet.apl.crypto.legacy.AnonymousDataEncryptor();
-    private static final SymmetricEncryptor SYMMETRIC_ENCRYPTOR = new com.apollocurrency.aplwallet.apl.crypto.legacy.SymmetricEncryptor();
+    private static final Cryptography crypto = new AdvancedCryptography();
 
     public static SecureRandom getSecureRandom() {
-        return secureRandom;
+        return crypto.getSecureRandom();
     }
 
     public static PublicKeyEncoder getPublicKeyEncoder() {
-        return PUBLIC_KEY_ENCODER_INSTANCE;
+        return crypto.getPublicKeyEncoder();
     }
 
     public static AsymmetricKeyGenerator getKeyGenerator() {
-        return ASYMMETRIC_KEY_GENERATOR;
+        return crypto.getKeyGenerator();
     }
 
     public static Signer getSigner() {
-        return SIGNER;
+        return crypto.getSigner();
     }
 
     public static SharedKeyCalculator getSharedKeyCalculator() {
-        return SHARED_KEY_CALCULATOR;
+        return crypto.getSharedKeyCalculator();
     }
 
     public static DigestCalculator getDigestCalculator() {
-        return DIGEST_CALCULATOR;
+        return crypto.getDigestCalculator();
     }
 
     public static DataEncryptor getDataEncryptor() {
-        return DATA_ENCRYPTOR;
+        return crypto.getDataEncryptor();
     }
 
     public static AnonymousDataEncryptor getAnonymousDataEncryptor() {
-        return ANONYMOUS_DATA_ENCRYPTOR;
+        return crypto.getAnonymousDataEncryptor();
     }
 
     public static SymmetricEncryptor getSymmetricEncryptor() {
-        return SYMMETRIC_ENCRYPTOR;
+        return crypto.getSymmetricEncryptor();
     }
 
 }

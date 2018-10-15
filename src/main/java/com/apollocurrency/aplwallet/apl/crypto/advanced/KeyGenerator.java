@@ -16,7 +16,7 @@ public class KeyGenerator implements AsymmetricKeyGenerator {
 
     @Override
     public KeyPair generateFromKeySeed(byte[] keySeed) {
-        return null;
+        return keyGenerator.generateKeys(new String(keySeed));
     }
 
 }

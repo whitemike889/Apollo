@@ -326,7 +326,7 @@ final class BlockImpl implements Block {
                     CryptoComponent.getPublicKeyEncoder().getEncodedLength() /* getGeneratorPublicKey */ +
                     CryptoComponent.getDigestCalculator().getCalculatedLength() /* generationSignature */ +
                     CryptoComponent.getDigestCalculator().getCalculatedLength() /* previousBlockHash */ +
-                    (blockSignature != null ? 64 : 0));
+                    (blockSignature != null ? CryptoComponent.getSigner().getSignatureLength() : 0));
             buffer.order(ByteOrder.LITTLE_ENDIAN);
             buffer.putInt(version);
             buffer.putInt(timestamp);
@@ -355,7 +355,7 @@ final class BlockImpl implements Block {
 
     private boolean checkSignature() {
         if (! hasValidSignature) {
-            byte[] data = Arrays.copyOf(bytes(), bytes.length - 64);
+            byte[] data = Arrays.copyOf(bytes(), bytes.length - CryptoComponent.getSigner().getSignatureLength());
 
             hasValidSignature = blockSignature != null && CryptoComponent.getSigner().verify(data, blockSignature, getGeneratorPublicKey());
         }

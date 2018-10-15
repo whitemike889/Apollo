@@ -1,6 +1,7 @@
 package com.apollocurrency.aplwallet.apl.crypto.advanced;
 
 import io.firstbridge.cryptolib.FBCryptoParams;
+import io.firstbridge.cryptolib.impl.JCEInitializer;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jce.ECNamedCurveTable;
@@ -11,7 +12,9 @@ import org.bouncycastle.math.ec.ECCurve;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 
-public class PublicKeyEncoder extends com.apollocurrency.aplwallet.apl.crypto.asymmetric.PublicKeyEncoder {
+public class PublicKeyEncoder  extends com.apollocurrency.aplwallet.apl.crypto.asymmetric.PublicKeyEncoder {
+
+    private JCEInitializer initializer = new JCEInitializer();
 
     private static final FBCryptoParams cryptoParams = FBCryptoParams.createDefault();
 
@@ -21,6 +24,9 @@ public class PublicKeyEncoder extends com.apollocurrency.aplwallet.apl.crypto.as
 
     @Override
     public byte[] encode(PublicKey key) {
+        if(key == null) {
+            return null;
+        }
         try {
             return getBCECPublicKeyPointData(key);
         } catch (InvalidKeyException e) {
@@ -31,6 +37,9 @@ public class PublicKeyEncoder extends com.apollocurrency.aplwallet.apl.crypto.as
 
     @Override
     public PublicKey decode(byte[] bytes) {
+        if(bytes == null) {
+            return null;
+        }
         try {
             return reconstructBCECPublicKey(bytes);
         } catch (NoSuchProviderException | NoSuchAlgorithmException | InvalidKeySpecException e) {
