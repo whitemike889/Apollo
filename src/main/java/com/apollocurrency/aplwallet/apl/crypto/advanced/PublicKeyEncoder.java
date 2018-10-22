@@ -48,11 +48,6 @@ public class PublicKeyEncoder  extends com.apollocurrency.aplwallet.apl.crypto.a
         return null;
     }
 
-    @Override
-    public int getEncodedLength() {
-        return ENCODED_BYTE_SIZE;
-    }
-
     /**
      * Get point data from BCECPublicKey
      * @param key

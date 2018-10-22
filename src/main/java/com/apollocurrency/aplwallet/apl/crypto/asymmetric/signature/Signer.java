@@ -19,12 +19,4 @@ public interface Signer {
      */
     boolean verify(byte[] message, byte[] signature, java.security.PublicKey theirPublicKey);
 
-    /**
-     * Returns size in bytes of the signature provided by sign(...) method
-     * User of this class should implement this.
-     * Basically should return a constant value
-     * @return
-     */
-    int getSignatureLength();
-
 }

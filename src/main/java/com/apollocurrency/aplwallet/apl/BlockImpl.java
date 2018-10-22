@@ -377,6 +377,7 @@ final class BlockImpl implements Block {
                 return false;
             }
 
+            // TODO Check this!!!
             MessageDigest digest = CryptoComponent.getDigestCalculator().createDigest();
             digest.update(previousBlock.generationSignature);
             byte[] generationSignatureHash = digest.digest(CryptoComponent.getPublicKeyEncoder().encode(getGeneratorPublicKey()));

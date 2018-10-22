@@ -12,6 +12,10 @@ import java.security.SecureRandom;
 
 public interface Cryptography {
 
+    enum Type {
+        LEGACY, ADVANCED
+    }
+
     SecureRandom getSecureRandom();
 
     PublicKeyEncoder getPublicKeyEncoder();

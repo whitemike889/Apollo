@@ -87,12 +87,12 @@ public class AnonymouslyEncryptedData implements com.apollocurrency.aplwallet.ap
 
     @Override
     public int getBytesSize() {
-        return message.calcBytesSize() + keyEncoder.getEncodedLength();
+        return message.calcBytesSize() + PublicKeyEncoder.ENCODED_BYTE_SIZE;
     }
 
     @Override
     public byte[] getBytes() {
-        ByteBuffer buffer = ByteBuffer.allocate(message.calcBytesSize() + keyEncoder.getEncodedLength());
+        ByteBuffer buffer = ByteBuffer.allocate(message.calcBytesSize() + PublicKeyEncoder.ENCODED_BYTE_SIZE);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         buffer.put(message.toBytes());
         buffer.put(keyEncoder.encode(publicKey));

@@ -1,6 +1,6 @@
 package com.apollocurrency.aplwallet.apl.crypto.asymmetric;
 
-import com.apollocurrency.aplwallet.apl.AplException;
+import com.apollocurrency.aplwallet.apl.crypto.Cryptography;
 
 /**
  * Interface for PublicKeyEncoder component
@@ -20,13 +20,6 @@ public abstract class PublicKeyEncoder {
      * @return
      */
     public abstract java.security.PublicKey decode(byte[] bytes);
-
-    /**
-     * Length in bytes of the encoded key data
-     * this should basically return a constant value
-     * @return
-     */
-    public abstract int getEncodedLength();
 
     /**
      * encode array of keys

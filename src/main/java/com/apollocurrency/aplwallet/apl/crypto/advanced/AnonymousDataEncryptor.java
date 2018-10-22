@@ -69,7 +69,7 @@ public class AnonymousDataEncryptor implements com.apollocurrency.aplwallet.apl.
         }
         byte[] data = new byte[length];
         buffer.get(data);
-        byte[] publicKeyBytes = new byte[keyEncoder.getEncodedLength()];
+        byte[] publicKeyBytes = new byte[PublicKeyEncoder.ENCODED_BYTE_SIZE];
         buffer.get(publicKeyBytes);
         return createEncryptedData(data, keyEncoder.decode(publicKeyBytes));
 
@@ -80,7 +80,7 @@ public class AnonymousDataEncryptor implements com.apollocurrency.aplwallet.apl.
         ByteBuffer buffer = ByteBuffer.wrap(bytes);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         try {
-            return readEncryptedData(buffer, bytes.length - keyEncoder.getEncodedLength(), Integer.MAX_VALUE);
+            return readEncryptedData(buffer, bytes.length - PublicKeyEncoder.ENCODED_BYTE_SIZE, Integer.MAX_VALUE);
         } catch (AplException.NotValidException e) {
             throw new RuntimeException(e.toString(), e); // never
         }

@@ -12,6 +12,9 @@ import java.security.PublicKey;
 
 public class Signer implements com.apollocurrency.aplwallet.apl.crypto.asymmetric.signature.Signer {
 
+    public static final int SIGNATURE_LENGTH = 4 /* length */ + 140 /* max key size */;
+
+
     /**
      * Signs message with privateKey and return signature aligned to the constant length
      * @param message
@@ -33,7 +36,7 @@ public class Signer implements com.apollocurrency.aplwallet.apl.crypto.asymmetri
         }
 
         /* wrap signature as follows (length, signature, padding zero bytes) */
-        byte[] bytes = new byte[getSignatureLength()];
+        byte[] bytes = new byte[SIGNATURE_LENGTH];
         ByteBuffer buffer = ByteBuffer.wrap(bytes);
         buffer.putInt(signature.length);
         buffer.put(signature);
@@ -53,7 +56,7 @@ public class Signer implements com.apollocurrency.aplwallet.apl.crypto.asymmetri
     @Override
     public boolean verify(byte[] message, byte[] signatureBytes, PublicKey theirPublicKey) {
 
-        if(signatureBytes.length != getSignatureLength()) {
+        if(signatureBytes.length != SIGNATURE_LENGTH) {
             throw  new RuntimeException("Invalid signature length. Check getSignatureLength() method of the Signer");
         }
 
@@ -70,12 +73,5 @@ public class Signer implements com.apollocurrency.aplwallet.apl.crypto.asymmetri
 
     }
 
-    /**
-     * @return Length of bytes returned by sign method
-     */
-    @Override
-    public int getSignatureLength() {
-        return 4 /* length */ + 140 /* max key size */;
-    }
 
 }

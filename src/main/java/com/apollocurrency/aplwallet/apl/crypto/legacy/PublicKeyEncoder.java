@@ -6,6 +6,8 @@ import java.security.PublicKey;
 
 public class PublicKeyEncoder extends com.apollocurrency.aplwallet.apl.crypto.asymmetric.PublicKeyEncoder {
 
+    public static final int ENCODED_BYTE_SIZE = 32;
+
     @Override
     public byte[] encode(PublicKey key) {
         if(key == null) {
@@ -22,7 +24,7 @@ public class PublicKeyEncoder extends com.apollocurrency.aplwallet.apl.crypto.as
         if(bytes == null) {
             return null;
         }
-        if(bytes.length != getEncodedLength()) {
+        if(bytes.length != ENCODED_BYTE_SIZE) {
             throw new InvalidParameterException("Invalid public key format. Check crypto config");
         }
         try {
@@ -31,11 +33,6 @@ public class PublicKeyEncoder extends com.apollocurrency.aplwallet.apl.crypto.as
             e.printStackTrace();
             return null; // TODO check this
         }
-    }
-
-    @Override
-    public int getEncodedLength() {
-        return 32;
     }
 
 }
