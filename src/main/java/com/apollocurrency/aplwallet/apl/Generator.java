@@ -22,6 +22,8 @@ package com.apollocurrency.aplwallet.apl;
 
 
 import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
+import com.apollocurrency.aplwallet.apl.crypto.Cryptography;
+import com.apollocurrency.aplwallet.apl.crypto.Utils;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import com.apollocurrency.aplwallet.apl.util.Listener;
 import com.apollocurrency.aplwallet.apl.util.Listeners;
@@ -259,9 +261,11 @@ public final class Generator implements Comparable<Generator> {
         if (allowsFakeForging(publicKey)) {
             return BigInteger.ZERO;
         }
-        MessageDigest digest = CryptoComponent.getDigestCalculator().createDigest();
+        Cryptography.Type cryptoType = Utils.getPublicKeyCryptoType(publicKey);
+        Cryptography cryptography = CryptoComponent.getCryptography(cryptoType);
+        MessageDigest digest = cryptography.getDigestCalculator().createDigest();
         digest.update(block.getGenerationSignature());
-        byte[] generationSignatureHash = digest.digest(CryptoComponent.getPublicKeyEncoder().encode(publicKey));
+        byte[] generationSignatureHash = digest.digest(cryptography.getPublicKeyEncoder().encode(publicKey));
         return new BigInteger(1, new byte[] {generationSignatureHash[7], generationSignatureHash[6], generationSignatureHash[5], generationSignatureHash[4], generationSignatureHash[3], generationSignatureHash[2], generationSignatureHash[1], generationSignatureHash[0]});
     }
 
@@ -287,7 +291,10 @@ public final class Generator implements Comparable<Generator> {
 
     private Generator(String secretPhrase) {
 
-        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
+        Cryptography.Type cryptoType = Utils.getAccountCryptoType(secretPhrase);
+        Cryptography crypto = CryptoComponent.getCryptography(cryptoType);
+
+        KeyPair keyPair = crypto.getKeyGenerator().generateKeyPair(secretPhrase);
 
         this.secretPhrase = secretPhrase;
         this.publicKey = keyPair.getPublic();

@@ -17,10 +17,4 @@ public interface DigestCalculator {
      */
     MessageDigest createDigest();
 
-    /**
-     * length of the calculated digest
-     * @return
-     */
-    int getCalculatedLength();
-
 }

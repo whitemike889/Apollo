@@ -21,6 +21,8 @@
 package com.apollocurrency.aplwallet.apl;
 
 import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
+import com.apollocurrency.aplwallet.apl.crypto.Cryptography;
+import com.apollocurrency.aplwallet.apl.crypto.Utils;
 import com.apollocurrency.aplwallet.apl.db.DbIterator;
 import com.apollocurrency.aplwallet.apl.db.DerivedDbTable;
 import com.apollocurrency.aplwallet.apl.db.FilteringIterator;
@@ -1345,7 +1347,9 @@ final class BlockchainProcessorImpl implements BlockchainProcessor {
             throw new BlockNotAcceptedException("Block timestamp " + block.getTimestamp() + " is before previous block timestamp "
                     + previousLastBlock.getTimestamp(), block);
         }
-        if (!Arrays.equals(CryptoComponent.getDigestCalculator().calcDigest(previousLastBlock.bytes()), block.getPreviousBlockHash())) {
+        Cryptography.Type cryptoType = Utils.getPublicKeyCryptoType(previousLastBlock.getGeneratorPublicKey());
+        Cryptography crypto = CryptoComponent.getCryptography(cryptoType);
+        if (!Arrays.equals(crypto.getDigestCalculator().calcDigest(previousLastBlock.bytes()), block.getPreviousBlockHash())) {
             throw new BlockNotAcceptedException("Previous block hash doesn't match", block);
         }
         if (block.getId() == 0L || BlockDb.hasBlock(block.getId(), previousLastBlock.getHeight())) {
@@ -1703,11 +1707,14 @@ final class BlockchainProcessorImpl implements BlockchainProcessor {
             }
         }
 
+        Cryptography.Type cryptoType = Utils.getAccountCryptoType(secretPhrase);
+        Cryptography crypto = CryptoComponent.getCryptography(cryptoType);
+
         BlockImpl previousBlock = blockchain.getLastBlock();
         TransactionProcessorImpl.getInstance().processWaitingTransactions();
         SortedSet<UnconfirmedTransaction> sortedTransactions = selectUnconfirmedTransactions(duplicates, previousBlock, blockTimestamp);
         List<TransactionImpl> blockTransactions = new ArrayList<>();
-        MessageDigest digest = CryptoComponent.getDigestCalculator().createDigest();
+        MessageDigest digest = crypto.getDigestCalculator().createDigest();
         long totalAmountATM = 0;
         long totalFeeATM = 0;
         int payloadLength = 0;
@@ -1722,9 +1729,9 @@ final class BlockchainProcessorImpl implements BlockchainProcessor {
         byte[] payloadHash = digest.digest();
         digest.update(previousBlock.getGenerationSignature());
 
-        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
-        byte[] generationSignature = digest.digest(CryptoComponent.getPublicKeyEncoder().encode(keyPair.getPublic()));
-        byte[] previousBlockHash = CryptoComponent.getDigestCalculator().calcDigest(previousBlock.bytes());
+        KeyPair keyPair = crypto.getKeyGenerator().generateKeyPair(secretPhrase);
+        byte[] generationSignature = digest.digest(crypto.getPublicKeyEncoder().encode(keyPair.getPublic()));
+        byte[] previousBlockHash = crypto.getDigestCalculator().calcDigest(previousBlock.bytes());
 
         BlockImpl block = new BlockImpl(getBlockVersion(previousBlock.getHeight()), blockTimestamp, previousBlock.getId(), totalAmountATM, totalFeeATM, payloadLength,
                 payloadHash, keyPair.getPublic(), generationSignature, previousBlockHash, blockTransactions, secretPhrase);

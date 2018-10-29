@@ -7,6 +7,8 @@ import java.security.NoSuchAlgorithmException;
 
 public class DigestCalculator implements com.apollocurrency.aplwallet.apl.crypto.DigestCalculator {
 
+    public static final int CALCULATED_LENGTH = 64;
+
     private static final FBCryptoParams fbCryptoDefaultParams = FBCryptoParams.createDefault();
 
     @Override
@@ -24,11 +26,6 @@ public class DigestCalculator implements com.apollocurrency.aplwallet.apl.crypto
             e.printStackTrace();
             return null;
         }
-    }
-
-    @Override
-    public int getCalculatedLength() {
-        return 64;
     }
 
 }

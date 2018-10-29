@@ -102,6 +102,16 @@ public class CryptoComponent {
         return getCryptography(Cryptography.Type.ADVANCED).getDigestCalculator();
     }
 
+    public static int getDigestLength(Cryptography.Type type) {
+        switch (type) {
+            case LEGACY:
+                return com.apollocurrency.aplwallet.apl.crypto.legacy.DigestCalculator.CALCULATED_LENGTH;
+            case ADVANCED:
+                return com.apollocurrency.aplwallet.apl.crypto.advanced.DigestCalculator.CALCULATED_LENGTH;
+        }
+        throw new RuntimeException("Unknown crypto type");
+    }
+
     /**
      * TODO remove this method
      * @return

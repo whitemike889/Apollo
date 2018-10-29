@@ -22,6 +22,8 @@ package com.apollocurrency.aplwallet.apl;
 
 import com.apollocurrency.aplwallet.apl.AccountLedger.LedgerEvent;
 import com.apollocurrency.aplwallet.apl.crypto.CryptoComponent;
+import com.apollocurrency.aplwallet.apl.crypto.Cryptography;
+import com.apollocurrency.aplwallet.apl.crypto.Utils;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -66,12 +68,13 @@ final class BlockImpl implements Block {
     private volatile long generatorId;
     private volatile byte[] bytes = null;
 
-
     BlockImpl(PublicKey generatorPublicKey, byte[] generationSignature) {
         this(-1, 0, 0, 0, 0, 0,
-                new byte[CryptoComponent.getDigestCalculator().getCalculatedLength()], generatorPublicKey,
-                generationSignature, new byte[CryptoComponent.getSigner().getSignatureLength()],
-                new byte[CryptoComponent.getDigestCalculator().getCalculatedLength()], Collections.emptyList());
+                new byte[CryptoComponent.getDigestLength(Utils.getPublicKeyCryptoType(generatorPublicKey))],
+                generatorPublicKey, generationSignature,
+                new byte[CryptoComponent.getSignatureLength(Utils.getPublicKeyCryptoType(generatorPublicKey))],
+                new byte[CryptoComponent.getDigestLength(Utils.getPublicKeyCryptoType(generatorPublicKey))],
+                Collections.emptyList());
         this.height = 0;
     }
 
@@ -79,8 +82,10 @@ final class BlockImpl implements Block {
               PublicKey generatorPublicKey, byte[] generationSignature, byte[] previousBlockHash, List<TransactionImpl> transactions, String secretPhrase) {
         this(version, timestamp, previousBlockId, totalAmountATM, totalFeeATM, payloadLength, payloadHash,
                 generatorPublicKey, generationSignature, null, previousBlockHash, transactions);
-        KeyPair keyPair = CryptoComponent.getKeyGenerator().generateKeyPair(secretPhrase);
-        blockSignature = CryptoComponent.getSigner().sign(bytes(), keyPair.getPrivate());
+        Cryptography.Type cryptoType = Utils.getAccountCryptoType(secretPhrase);
+        Cryptography crypto = CryptoComponent.getCryptography(cryptoType);
+        KeyPair keyPair = crypto.getKeyGenerator().generateKeyPair(secretPhrase);
+        blockSignature = crypto.getSigner().sign(bytes(), keyPair.getPrivate());
         bytes = null;
     }
 
@@ -220,7 +225,9 @@ final class BlockImpl implements Block {
             if (blockSignature == null) {
                 throw new IllegalStateException("Block is not signed yet");
             }
-            byte[] hash = CryptoComponent.getDigestCalculator().calcDigest(bytes());
+            Cryptography.Type cryptoType = Utils.getPublicKeyCryptoType(generatorPublicKey);
+            Cryptography crypto = CryptoComponent.getCryptography(cryptoType);
+            byte[] hash = crypto.getDigestCalculator().calcDigest(bytes());
             BigInteger bigInteger = new BigInteger(1, new byte[] {hash[7], hash[6], hash[5], hash[4], hash[3], hash[2], hash[1], hash[0]});
             id = bigInteger.longValue();
             stringId = bigInteger.toString();
@@ -314,6 +321,9 @@ final class BlockImpl implements Block {
 
     byte[] bytes() {
         if (bytes == null) {
+            Cryptography.Type cryptoType = Utils.getPublicKeyCryptoType(getGeneratorPublicKey());
+            Cryptography crypto = CryptoComponent.getCryptography(cryptoType);
+
             ByteBuffer buffer = ByteBuffer.allocate(
                     4 /* version */ +
                     4 /* timestamp */ +
@@ -322,11 +332,11 @@ final class BlockImpl implements Block {
                     8 /* totalAmountATM */ +
                     8 /* totalFeeATM */ +
                     4 /* payloadLength */ +
-                    CryptoComponent.getDigestCalculator().getCalculatedLength() /* payloadHash */ +
-                    CryptoComponent.getPublicKeyEncoder().getEncodedLength() /* getGeneratorPublicKey */ +
-                    CryptoComponent.getDigestCalculator().getCalculatedLength() /* generationSignature */ +
-                    CryptoComponent.getDigestCalculator().getCalculatedLength() /* previousBlockHash */ +
-                    (blockSignature != null ? CryptoComponent.getSigner().getSignatureLength() : 0));
+                    CryptoComponent.getDigestLength(cryptoType) /* payloadHash */ +
+                    CryptoComponent.getPublicKeyEncodedByteSize(cryptoType) /* getGeneratorPublicKey */ +
+                    CryptoComponent.getDigestLength(cryptoType) /* generationSignature */ +
+                    CryptoComponent.getDigestLength(cryptoType) /* previousBlockHash */ +
+                    (blockSignature != null ? CryptoComponent.getSignatureLength(cryptoType) : 0));
             buffer.order(ByteOrder.LITTLE_ENDIAN);
             buffer.putInt(version);
             buffer.putInt(timestamp);
@@ -336,7 +346,7 @@ final class BlockImpl implements Block {
             buffer.putLong(totalFeeATM);
             buffer.putInt(payloadLength);
             buffer.put(payloadHash);
-            buffer.put(CryptoComponent.getPublicKeyEncoder().encode(getGeneratorPublicKey()));
+            buffer.put(crypto.getPublicKeyEncoder().encode(getGeneratorPublicKey()));
             buffer.put(generationSignature);
             buffer.put(previousBlockHash);
             if (blockSignature != null) {
@@ -355,9 +365,14 @@ final class BlockImpl implements Block {
 
     private boolean checkSignature() {
         if (! hasValidSignature) {
-            byte[] data = Arrays.copyOf(bytes(), bytes.length - CryptoComponent.getSigner().getSignatureLength());
 
-            hasValidSignature = blockSignature != null && CryptoComponent.getSigner().verify(data, blockSignature, getGeneratorPublicKey());
+
+            Cryptography.Type cryptoType = Utils.getPublicKeyCryptoType(getGeneratorPublicKey());
+            Cryptography crypto = CryptoComponent.getCryptography(cryptoType);
+
+            byte[] data = Arrays.copyOf(bytes(), bytes.length - CryptoComponent.getSignatureLength(cryptoType));
+
+            hasValidSignature = blockSignature != null && crypto.getSigner().verify(data, blockSignature, getGeneratorPublicKey());
         }
         return hasValidSignature;
     }
@@ -377,10 +392,13 @@ final class BlockImpl implements Block {
                 return false;
             }
 
+            Cryptography.Type cryptoType = Utils.getPublicKeyCryptoType(getGeneratorPublicKey());
+            Cryptography crypto = CryptoComponent.getCryptography(cryptoType);
+
             // TODO Check this!!!
-            MessageDigest digest = CryptoComponent.getDigestCalculator().createDigest();
+            MessageDigest digest = crypto.getDigestCalculator().createDigest();
             digest.update(previousBlock.generationSignature);
-            byte[] generationSignatureHash = digest.digest(CryptoComponent.getPublicKeyEncoder().encode(getGeneratorPublicKey()));
+            byte[] generationSignatureHash = digest.digest(crypto.getPublicKeyEncoder().encode(getGeneratorPublicKey()));
             if (!Arrays.equals(generationSignature, generationSignatureHash)) {
                 return false;
             }
