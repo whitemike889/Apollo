@@ -995,13 +995,6 @@ final class TransactionImpl implements Transaction {
             throw new AplException.NotValidException("Transaction size " + getFullSize() + " exceeds maximum payload size");
         }
         int blockchainHeight = Apl.getBlockchain().getHeight();
-        if (blockchainHeight > 291699)
-        {
-            //long[] blacklist = {-6778759751532475550L};
-            //if (senderId == blacklist[0])  throw new AplException.NotValidException("Invalid transaction parameters:\n type: " + type + ", timestamp: " + timestamp
-            //        + ", deadline: " + deadline + ", fee: " + feeATM + ", amount: " + amountATM);
-        }
-        
         if (!validatingAtFinish) {
             long minimumFeeATM = getMinimumFeeATM(blockchainHeight);
             if (feeATM < minimumFeeATM) {
