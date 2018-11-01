@@ -4,11 +4,36 @@
 
 package com.apollocurrency.aplwallet.apl.updater;
 
-import com.apollocurrency.aplwallet.apl.*;
+import static com.apollocurrency.aplwallet.apl.updater.UpdaterConstants.CERTIFICATE_DIRECTORY;
+import static com.apollocurrency.aplwallet.apl.updater.UpdaterConstants.CERTIFICATE_SUFFIX;
+import static com.apollocurrency.aplwallet.apl.updater.UpdaterConstants.FIRST_DECRYPTION_CERTIFICATE_PREFIX;
+import static com.apollocurrency.aplwallet.apl.updater.UpdaterConstants.SECOND_DECRYPTION_CERTIFICATE_PREFIX;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyString;
+import static org.powermock.api.mockito.PowerMockito.doCallRealMethod;
+import static org.powermock.api.mockito.PowerMockito.doNothing;
+import static org.powermock.api.mockito.PowerMockito.doReturn;
+import static org.powermock.api.mockito.PowerMockito.mock;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.spy;
+import static org.powermock.api.mockito.PowerMockito.verifyPrivate;
+import static org.powermock.api.mockito.PowerMockito.when;
+import static org.powermock.api.mockito.PowerMockito.whenNew;
+
+import com.apollocurrency.aplwallet.apl.Attachment;
+import com.apollocurrency.aplwallet.apl.Level;
+import com.apollocurrency.aplwallet.apl.Transaction;
+import com.apollocurrency.aplwallet.apl.TransactionType;
+import com.apollocurrency.aplwallet.apl.UpdateInfo;
+import com.apollocurrency.aplwallet.apl.UpdaterDb;
+import com.apollocurrency.aplwallet.apl.UpdaterMediator;
+import com.apollocurrency.aplwallet.apl.Version;
 import com.apollocurrency.aplwallet.apl.updater.downloader.Downloader;
-import com.apollocurrency.aplwallet.apl.util.Logger;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.BDDMockito;
@@ -17,7 +42,6 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 import util.TestUtil;
@@ -29,16 +53,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
-import static com.apollocurrency.aplwallet.apl.updater.UpdaterConstants.*;
-import static org.mockito.Matchers.*;
-import static org.powermock.api.mockito.PowerMockito.*;
-
+@Ignore
 @RunWith(PowerMockRunner.class)
-@SuppressStaticInitializationFor("com.apollocurrency.aplwallet.apl.util.Logger")
-@PrepareForTest(value = {UpdaterUtil.class, AuthorityChecker.class, RSAUtil.class, UpdaterCore.class, UpdaterMediator.class, Downloader.class, PlatformDependentUpdater.class, Unpacker.class, Logger.class, UpdaterDb.class })
+@PrepareForTest(value = {UpdaterUtil.class, AuthorityChecker.class, RSAUtil.class, UpdaterCore.class, UpdaterMediator.class, Downloader.class, PlatformDependentUpdater.class, Unpacker.class, UpdaterDb.class })
 public class UpdaterCoreTest {
 
     private Attachment.UpdateAttachment attachment = Attachment.UpdateAttachment.getAttachment(
@@ -63,7 +86,6 @@ public class UpdaterCoreTest {
 
     @Before
     public void setUp() throws Exception {
-        mockStatic(Logger.class);
         mockStatic(UpdaterMediator.class);
         BDDMockito.given(UpdaterMediator.getInstance()).willReturn(fakeMediatorInstance);
         mockStatic(Downloader.class);
@@ -244,12 +266,11 @@ public class UpdaterCoreTest {
         }
     }
 
-    //TODO create few tests
     @Test
     public void testProcessTransactions() throws Exception {
         doReturn(true).when(fakeCheckerInstance, "verifyCertificates", CERTIFICATE_DIRECTORY);
         mockStatic(UpdaterDb.class);
-        Version testVersion = Version.from("1.1.5");
+        Version testVersion = Version.from("1.0.7");
         when(fakeMediatorInstance, "getWalletVersion").thenReturn(testVersion);
 
         Platform currentPlatform = Platform.current();

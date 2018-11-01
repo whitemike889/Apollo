@@ -20,6 +20,35 @@
 
 package com.apollocurrency.aplwallet.apl;
 
+
+import com.apollocurrency.aplwallet.apl.dbmodel.Option;
+import static com.apollocurrency.aplwallet.apl.Constants.DEFAULT_PEER_PORT;
+import static com.apollocurrency.aplwallet.apl.Constants.TESTNET_API_SSLPORT;
+import static com.apollocurrency.aplwallet.apl.Constants.TESTNET_PEER_PORT;
+import static org.slf4j.LoggerFactory.getLogger;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.lang.management.ManagementFactory;
+import java.net.ServerSocket;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.AccessControlException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+
 import com.apollocurrency.aplwallet.apl.addons.AddOns;
 import com.apollocurrency.aplwallet.apl.crypto.Crypto;
 import com.apollocurrency.aplwallet.apl.env.DirProvider;
@@ -36,25 +65,10 @@ import org.h2.jdbc.JdbcSQLException;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 
-import java.io.*;
-import java.lang.management.ManagementFactory;
-import java.net.ServerSocket;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.AccessControlException;
-import java.sql.SQLException;
-import java.util.*;
-
-import static com.apollocurrency.aplwallet.apl.Constants.*;
-import static org.slf4j.LoggerFactory.getLogger;
-
 public final class Apl {
     private static Logger LOG;
 
-    public static final Version VERSION = Version.from("1.20.3");
+    public static final Version VERSION = Version.from("1.21.1");
     public static final String APPLICATION = "Apollo";
     private static Thread shutdownHook;
     private static volatile Time time = new Time.EpochTime();
@@ -443,7 +457,7 @@ public final class Apl {
                 LOG.info("Copyright © 2013-2016 The NXT Core Developers.");
                 LOG.info("Copyright © 2016-2017 Jelurida IP B.V..");
                 LOG.info("Copyright © 2017-2018 Apollo Foundation.");
-                LOG.info("Distributed under the Apollo Foundation Public License version 1.0 for the Apl Public Blockchain Platform, with ABSOLUTELY NO WARRANTY.");
+                LOG.info("See LICENSE.txt for more information");
                 if (API.getWelcomePageUri() != null) {
                     LOG.info("Client UI is at " + API.getWelcomePageUri());
                 }
@@ -452,9 +466,11 @@ public final class Apl {
                     runtimeMode.updateAppStatus("Starting desktop application...");
                     launchDesktopApplication();
                 }
+                
                 if (Constants.isTestnet) {
                     LOG.info("RUNNING ON TESTNET - DO NOT USE REAL ACCOUNTS!");
                 }
+
             }
             catch (final RuntimeException e) {
                 if (e.getMessage() == null || (!e.getMessage().contains(JdbcSQLException.class.getName()) && !e.getMessage().contains(SQLException.class.getName()))) {
@@ -523,6 +539,7 @@ public final class Apl {
 
         public static boolean isTcpPortAvailable(int port) {
             try (ServerSocket serverSocket = new ServerSocket(port)) {
+                serverSocket.setReuseAddress(true);
                 return true;
             } catch (Exception ex) {
                 return false;
@@ -619,6 +636,14 @@ public final class Apl {
     public static String getDbDir(String dbDir) {
         return dirProvider.getDbDir(dbDir);
     }
+    public static Path getKeystoreDir(String keystoreDir) {
+        return dirProvider.getKeystoreDir(keystoreDir).toPath();
+    }
+
+    public static Path get2FADir(String dir2FA) {
+        return Paths.get(dirProvider.getUserHomeDir(), dir2FA);
+    }
+
 
     public static void updateLogFileHandler(Properties loggingProperties) {
         dirProvider.updateLogFileHandler(loggingProperties);
