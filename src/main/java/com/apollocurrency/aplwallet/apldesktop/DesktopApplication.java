@@ -364,7 +364,7 @@ public class DesktopApplication extends Application {
                         String language = locale.getLanguage().toLowerCase() + "-" + locale.getCountry().toUpperCase();
                         window.setMember("javaFxLanguage", language);
                         webEngine.executeScript("console.log = function(msg) { java.log(msg); };");
-                        mainStage.setTitle(Constants.PROJECT_NAME + " Desktop - " + webEngine.getLocation());
+                        mainStage.setTitle(Constants.getProjectName() + " Desktop - " + webEngine.getLocation());
                         nrs = (JSObject) webEngine.executeScript("NRS");
                         updateClientState("Desktop Wallet started");
                         BlockchainProcessor blockchainProcessor = Apl.getBlockchainProcessor();
@@ -700,7 +700,7 @@ public class DesktopApplication extends Application {
         }
 
         private Alert reindexDbUI() throws SQLException {
-            FullTextTrigger.reindex(Db.db.getConnection());
+            FullTextTrigger.reindex(Db.getDb().getConnection());
             return prepareAlert(Alert.AlertType.INFORMATION, "DB was re-indexed", "Db was re-indexed successfully! Please restart the wallet. Note: If wallet still failed after successful re-indexing, click on \"Remove db\" button", 180, new ButtonType("OK", ButtonBar.ButtonData.OK_DONE), new ButtonType("Remove db", ButtonBar.ButtonData.APPLY));
         }
 

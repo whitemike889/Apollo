@@ -260,7 +260,7 @@ public final class APIServlet extends HttpServlet {
             try {
                 try {
                     if (apiRequestHandler.startDbTransaction()) {
-                        Db.db.beginTransaction();
+                        Db.getDb().beginTransaction();
                     }
                     if (requireBlockId != 0 && !Apl.getBlockchain().hasBlock(requireBlockId)) {
                         response = REQUIRED_BLOCK_NOT_FOUND;
@@ -277,7 +277,7 @@ public final class APIServlet extends HttpServlet {
                     }
                 } finally {
                     if (apiRequestHandler.startDbTransaction()) {
-                        Db.db.endTransaction();
+                        Db.getDb().endTransaction();
                     }
                 }
             } finally {

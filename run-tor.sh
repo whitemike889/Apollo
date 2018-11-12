@@ -10,6 +10,11 @@ if [ -x jre/bin/java ]; then
 else
     JAVA=java
 fi
+
+cd tor
+./tor &
+cd ..
+
 ${JAVA} -DsocksProxyHost=localhost -DsocksProxyPort=9050 -Dapl.runtime.mode=desktop -jar Apollo.jar
 
 
