@@ -46,7 +46,7 @@
   {
     "chainId": "a2e9b946-290b-48b6-9985-dc2e5a5860a1",
     "isTestnet": true,
-    "active": true,
+    "active": false,
     "defaultPeers": [
       "51.15.235.41",
       "163.172.146.173",
@@ -108,6 +108,52 @@
             "enabled": "true",
             "emptyBlockTime": 60
           }
+        }
+      }
+    ]
+  },
+  {
+    "chainId": "0263dc68-9bc6-48de-9f4d-7e1ef5824591",
+    "isTestnet": true,
+    "active": true,
+    "defaultPeers": [
+      "51.15.228.90",
+      "51.15.130.37",
+      "51.15.209.252",
+      "51.15.140.80",
+      "51.15.46.49"
+    ],
+    "wellKnownPeers": [],
+    "blacklistedPeers": [],
+    "name": "Apollo testnet",
+    "description": "Apollo secondary test chain",
+    "symbol": "Apollo",
+    "prefix": "APL",
+    "project": "Apollo",
+    "genesisLocation": "data/genesisAccounts-testnet.json",
+    "blockchainProperties": [
+      {
+        "height": 0,
+        "maxNumberOfTransactions": 255,
+        "blockTime": 60,
+        "maxBlockTimeLimit": 67,
+        "minBlockTimeLimit": 53,
+        "maxBalance": 30000000000,
+        "consensus":
+        {
+          "type": "POS"
+        }
+      },
+      {
+        "height": 60,
+        "maxNumberOfTransactions": 255,
+        "blockTime": 10,
+        "maxBlockTimeLimit": 60,
+        "minBlockTimeLimit": 3,
+        "maxBalance": 30000000000,
+        "consensus":
+        {
+          "type": "POS"
         }
       }
     ]
