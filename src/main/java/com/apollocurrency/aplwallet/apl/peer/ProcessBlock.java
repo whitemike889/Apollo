@@ -49,17 +49,15 @@ final class ProcessBlock extends PeerServlet.PeerRequestHandler {
         String previousBlockId = (String)request.get("previousBlock");
         Block lastBlock = Apl.getBlockchain().getLastBlock();
         long peerBlockTimestamp = Convert.parseLong(request.get("timestamp"));
-        int peerBlockTimeout = ((Long)request.get("timeout")).intValue();
-        LOG.debug("API: Timeout: peerBlock{},ourBlock{}", peerBlockTimeout, lastBlock.getTimeout());
-        LOG.debug("API: Timestamp: peerBlock{},ourBlock{}", peerBlockTimestamp, lastBlock.getTimestamp());
-        LOG.debug("API: PrevId: peerBlock{},ourBlock{}", Convert.parseUnsignedLong(previousBlockId), lastBlock.getPreviousBlockId());
+        Object timeoutJsonValue = request.get("timeout");
+        int peerBlockTimeout =  timeoutJsonValue == null ? 0 : ((Long)timeoutJsonValue).intValue();
         if (lastBlock.getStringId().equals(previousBlockId) ||
                 (Convert.parseUnsignedLong(previousBlockId) == lastBlock.getPreviousBlockId()
                         && (lastBlock.getTimestamp() > peerBlockTimestamp ||
                         peerBlockTimestamp == lastBlock.getTimestamp() && peerBlockTimeout > lastBlock.getTimeout()))) {
             Peers.peersService.submit(() -> {
                 try {
-                    LOG.debug("API: need to process peer block");
+                    LOG.debug("API: need to process better peer block");
                     Apl.getBlockchainProcessor().processPeerBlock(request);
                 } catch (AplException | RuntimeException e) {
                     if (peer != null) {

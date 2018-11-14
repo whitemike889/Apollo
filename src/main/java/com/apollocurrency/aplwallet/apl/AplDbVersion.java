@@ -9,7 +9,7 @@
  * no part of the Nxt software, including this file, may be copied, modified,
  * propagated, or distributed except according to the terms contained in the
  * LICENSE.txt file.
- *
+ * 
  * Removal or modification of this copyright notice is prohibited.
  *
  */
@@ -683,6 +683,10 @@ public class AplDbVersion extends DbVersion {
             case 246:
                 apply("ALTER TABLE block ADD CONSTRAINT chk_timeout CHECK (timeout >= 0)");
             case 247:
+                apply("ALTER TABLE currency ALTER COLUMN min_reserve_per_unit_nqt RENAME TO min_reserve_per_unit_atm");
+            case 248:
+                apply("ALTER TABLE currency_supply ALTER COLUMN current_reserve_per_unit_nqt RENAME TO current_reserve_per_unit_atm");
+            case 249:
                 return;
             default:
                 throw new RuntimeException("Blockchain database inconsistent with code, at update " + nextUpdate

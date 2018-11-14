@@ -20,6 +20,7 @@
 
 package com.apollocurrency.aplwallet.apl;
 
+
 import static com.apollocurrency.aplwallet.apl.Constants.DEFAULT_PEER_PORT;
 import static com.apollocurrency.aplwallet.apl.Constants.TESTNET_API_SSLPORT;
 import static com.apollocurrency.aplwallet.apl.Constants.TESTNET_PEER_PORT;
@@ -60,9 +61,13 @@ import com.apollocurrency.aplwallet.apl.env.ServerStatus;
 import com.apollocurrency.aplwallet.apl.http.API;
 import com.apollocurrency.aplwallet.apl.http.APIProxy;
 import com.apollocurrency.aplwallet.apl.peer.Peers;
+import com.apollocurrency.aplwallet.apl.updater.UpdateInfo;
+import com.apollocurrency.aplwallet.apl.updater.core.UpdaterCore;
+import com.apollocurrency.aplwallet.apl.updater.core.UpdaterCoreImpl;
 import com.apollocurrency.aplwallet.apl.util.Convert;
 import com.apollocurrency.aplwallet.apl.util.ThreadPool;
 import com.apollocurrency.aplwallet.apl.util.Time;
+import com.apollocurrency.aplwallet.apl.util.NtpTime;
 import org.h2.jdbc.JdbcSQLException;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -82,7 +87,8 @@ public final class Apl {
 
     private static final RuntimeMode runtimeMode;
     private static final DirProvider dirProvider;
-
+    private static NtpTime ntpTime;
+    
     public static RuntimeMode getRuntimeMode() {
         return runtimeMode;
     }
@@ -105,7 +111,7 @@ public final class Apl {
     }
 
     private static volatile boolean shutdown = false;
-
+    private static UpdaterCore updaterCore;
     public static boolean isShutdown() {
         return shutdown;
     }
@@ -394,7 +400,7 @@ public final class Apl {
 
         static {
             try {
-
+                ntpTime = new NtpTime();
                 long startTime = System.currentTimeMillis();
                 chainIdService = new ChainIdServiceImpl(
                         (Apl.getStringProperty("apl.chainIdFilePath" , "chains.json")));
@@ -576,13 +582,20 @@ public final class Apl {
       String[] systemProperties = new String[] {
         "socksProxyHost",
         "socksProxyPort",
+        "apl.enablePeerUPnP"
       };
 
       for (String propertyName : systemProperties) {
         String propertyValue;
-        if ((propertyValue = getStringProperty(propertyName)) != null) {
-          System.setProperty(propertyName, propertyValue);
+        if ((propertyValue = System.getProperty(propertyName)) != null) {
+          //System.setProperty(propertyName, propertyValue);
+          properties.setProperty(propertyName, propertyValue);
+          LOG.info("System property set: ", propertyName + " " + propertyValue);
         }
+        else
+        {
+        }
+
       }
     }
 
@@ -631,6 +644,14 @@ public final class Apl {
                         "Install haveged if on linux, or set apl.useStrongSecureRandom=false.");
             }
         } catch (InterruptedException ignore) {}
+    }
+
+    public static UpdateInfo getUpdateInfo() {
+        return updaterCore.getUpdateInfo();
+    }
+
+    public static boolean startMinorUpdate() {
+        return updaterCore.startAvailableUpdate();
     }
 
     public static String getProcessId() {
@@ -701,14 +722,7 @@ public final class Apl {
         if (!getBooleanProperty("apl.allowUpdates", false)) {
             return;
         }
-        try {
-            Class<?> aClass = Class.forName("com.apollocurrency.aplwallet.apl.updater.UpdaterCore");
-            //force load lazy updater instance
-            aClass.getMethod("getInstance").invoke(null);
-
-        }
-        catch (Exception e) {
-            LOG.error("Cannot load Updater!", e);
-        }
+        updaterCore = new UpdaterCoreImpl(new UpdaterMediatorImpl());
+        updaterCore.init();
     }
 }

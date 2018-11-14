@@ -203,7 +203,7 @@ public final class Constants {
     public static final int CHECKSUM_BLOCK_1 = Integer.MAX_VALUE;
 
     public static final int LAST_CHECKSUM_BLOCK = 0;
-    // lastKnownBlock must also be set in html/www/js/nrs.constants.js
+    // lastKnownBlock must also be set in html/www/js/ars.constants.js
     private static int lastKnownBlock;
 
     public static final Version MIN_VERSION = new Version(1, 0, 0);
@@ -224,6 +224,8 @@ public final class Constants {
     public static final String ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyz";
     public static final String ALLOWED_CURRENCY_CODE_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
+    public static final String TIME_SERVICE = "pool.ntp.org";
+    
     private Constants() {} // never
 
     public static void init(Chain chain) {
