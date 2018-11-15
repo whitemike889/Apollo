@@ -35,8 +35,8 @@ then
 	rm -rf "$1/ApolloWallet+Tor.app"
 	rm -rf secureTransport
 	
-	mv linux_transport/* .
-	rm -rf linux_transport
+	mv transport_linux/* .
+	rm -rf transport_linux
 	chmod 755 $1/tor/tor
 	chmod 755 $1/secureTransport/securenodexchg
 	chmod 755 $1/secureTransport/runClient.sh
