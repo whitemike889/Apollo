@@ -75,7 +75,7 @@
         }
       },
       {
-        "height": 400,
+        "height": 100,
         "maxNumberOfTransactions": 255,
         "blockTime": 10,
         "maxBlockTimeLimit": 60,
