@@ -83,9 +83,9 @@
         "maxBalance": 30000000000,
         "consensus":
         {
-          "type": "POS",
+          "type": "POS"
         }
-      },
+      }
     ]
   }
 ]
