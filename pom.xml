@@ -25,7 +25,7 @@
 
         <!--Web-->
         <servlet-api.version>3.1.0</servlet-api.version>
-        <jetty.version>9.3.22.v20171030</jetty.version>
+        <jetty.version>9.4.41.v20210516</jetty.version>
         <websocket.version>9.3.22.v20171030</websocket.version>
 
         <!--Crypto-->
